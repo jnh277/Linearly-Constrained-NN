@@ -73,21 +73,27 @@ class DerivNet3D(torch.nn.Module):
 
 model = DerivNet3D(n_in, n_h1, n_h2, n_o)
 
-x_train = torch.rand(500, 3)
+x_train = torch.rand(1000, 3)
 x1_train = x_train[:, 0].unsqueeze(1)
 x2_train = x_train[:, 1].unsqueeze(1)
 x3_train = x_train[:, 2].unsqueeze(1)
-y1_train = (math.pi) * torch.cos(1 * math.pi * x1_train) * torch.cos(2 * math.pi * x2_train) * x3_train.pow(2)
-y2_train = -(2 * math.pi) * torch.sin(1 * math.pi * x1_train) * torch.sin(2 * math.pi * x2_train) * x3_train.pow(2)
-y3_train = 2*torch.sin(1*math.pi*x1_train) * torch.cos(2*math.pi * x2_train) * x3_train
+# y1_train = (math.pi) * torch.cos(1 * math.pi * x1_train) * torch.cos(2 * math.pi * x2_train) * torch.cos(0.5*math.pi*x3_train+0.5*math.pi)
+# y2_train = -(2 * math.pi) * torch.sin(1 * math.pi * x1_train) * torch.sin(2 * math.pi * x2_train) * torch.cos(0.5*math.pi*x3_train+0.5*math.pi)
+# y3_train = (0.5*math.pi)*torch.sin(1*math.pi*x1_train) * torch.cos(2*math.pi * x2_train)*torch.cos(0.5*math.pi*x3_train+0.5*math.pi)
+#
+y1_train = (math.pi) * torch.cos(1 * math.pi * x1_train) * torch.cos(2 * math.pi * x2_train) * (x3_train-0.5).pow(2)
+y2_train = -(2 * math.pi) * torch.sin(1 * math.pi * x1_train) * torch.sin(2 * math.pi * x2_train) * (x3_train-0.5).pow(2)
+y3_train = 2*torch.sin(1*math.pi*x1_train) * torch.cos(2*math.pi * x2_train)*(x3_train-0.5)
+
 
 
 ## train
 criterion = torch.nn.MSELoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+# optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 750, gamma=0.25, last_epoch=-1)
 
-train_iters = 5000
+train_iters = 2000
 loss_save = torch.empty(train_iters, 1)
 
 for epoch in range(train_iters):
@@ -95,19 +101,57 @@ for epoch in range(train_iters):
     x1_train = x_train[:, 0].unsqueeze(1)
     x2_train = x_train[:, 1].unsqueeze(1)
     x3_train = x_train[:, 2].unsqueeze(1)
-    y1_train = (math.pi) * torch.cos(1 * math.pi * x1_train) * torch.cos(2 * math.pi * x2_train) * x3_train.pow(2)
-    y2_train = -(2 * math.pi) * torch.sin(1 * math.pi * x1_train) * torch.sin(2 * math.pi * x2_train) * x3_train.pow(2)
-    y3_train = 2 * torch.sin(1 * math.pi * x1_train) * torch.cos(2 * math.pi * x2_train) * x3_train
+    # y1_train = (math.pi) * torch.cos(1 * math.pi * x1_train) * torch.cos(2 * math.pi * x2_train) * torch.cos(
+    #     0.5 * math.pi * x3_train + 0.5 * math.pi) + torch.randn(x1_train.size()) * 0.05
+    # y2_train = -(2 * math.pi) * torch.sin(1 * math.pi * x1_train) * torch.sin(2 * math.pi * x2_train) * torch.cos(
+    #     0.5 * math.pi * x3_train + 0.5 * math.pi) + torch.randn(x1_train.size()) * 0.05
+    # y3_train = (0.5 * math.pi) * torch.sin(1 * math.pi * x1_train) * torch.cos(2 * math.pi * x2_train) * torch.cos(
+    #     0.5 * math.pi * x3_train + 0.5 * math.pi) + torch.randn(x1_train.size()) * 0.05
+    y1_train = (math.pi) * torch.cos(1 * math.pi * x1_train) * torch.cos(2 * math.pi * x2_train) * (x3_train - 0.5).pow(
+        2)+ torch.randn(x1_train.size()) * 0.05
+    y2_train = -(2 * math.pi) * torch.sin(1 * math.pi * x1_train) * torch.sin(2 * math.pi * x2_train) * (
+                x3_train - 0.5).pow(2)+ torch.randn(x1_train.size()) * 0.05
+    y3_train = 2 * torch.sin(1 * math.pi * x1_train) * torch.cos(2 * math.pi * x2_train) * (x3_train - 0.5)+ \
+               torch.randn(x1_train.size()) * 0.05
 
     optimizer.zero_grad()
     (yhat, dyhatdx1,dyhatdx2,dyhatdx3) = model(x_train)
     loss = criterion(y1_train, dyhatdx1) + criterion(y2_train, dyhatdx2) + criterion(y3_train, dyhatdx3)
     print('epoch: ', epoch, ' loss: ', loss.item())
-    # (yhat_val, dyvaldx) = model(val_x)
-    # val_loss = criterion(val_y, dyvaldx)
     # print('epoch: ', epoch, ' loss: ', loss.item(), 'val loss: ', val_loss.item())
     loss.backward()
     optimizer.step()
     loss_save[epoch, 0] = loss
     # val_loss_save[epoch, 0] = val_loss
     scheduler.step(epoch)
+
+
+# plotting prediction vs true at a slice of z
+xv, yv = torch.meshgrid([torch.arange(0.0,15.0)/15.0, torch.arange(0.0,15.0)/15.0])
+# zv = torch.zeros(xv.size())
+zv = 0.25*torch.ones(xv.size())
+
+
+# true function
+dfdx = (math.pi) * torch.cos(1 * math.pi * xv) * torch.cos(2 * math.pi * yv) * (zv-0.5).pow(2)
+dfdy = -(2 * math.pi) * torch.sin(1 * math.pi * xv) * torch.sin(2 * math.pi * yv) * (zv-0.5).pow(2)
+dfdz = 2*torch.sin(1*math.pi*xv) * torch.cos(2*math.pi * yv)*(zv-0.5)
+
+
+# xv, yv, zv = torch.meshgrid([torch.arange(0.0,15.0)/15.0, torch.arange(0.0,15.0)/15.0,
+#                              torch.arange(0.0,3.0)/3])
+
+# get the predicted function at a slice
+x_pred = torch.cat((xv.reshape(15*15,1), yv.reshape(15*15,1), zv.reshape(15*15,1)),1)
+(f_pred, dfdx_pred, dfdy_pred, dfdz_pred) = model(x_pred)
+
+with torch.no_grad():
+    # Initialize plot
+    f, ax = plt.subplots(1, 1, figsize=(4, 4))
+    # ax.pcolor(xv,yv,f_scalar)
+    ax.quiver(xv, yv, dfdx, dfdy)
+    ax.quiver(xv, yv, dfdx_pred.reshape(15,15).detach(), dfdy_pred.reshape(15,15).detach(), color='r')
+    # ax[0].legend(['true','predicted'])
+
+    # ax[1].plot(loss_save.detach().log().numpy())
+    plt.show()

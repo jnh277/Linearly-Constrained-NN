@@ -120,9 +120,11 @@ x_pred = torch.cat((xv.reshape(15*15,1), yv.reshape(15*15,1)),1)
 
 with torch.no_grad():
     # Initialize plot
-    f, ax = plt.subplots(1, 1, figsize=(4, 4))
+    f, ax = plt.subplots(2, 1, figsize=(4, 6))
     # ax.pcolor(xv,yv,f_scalar)
-    ax.quiver(xv, yv, dfdx, dfdy)
-    ax.quiver(xv, yv, dfdx_pred.reshape(15,15).detach(), dfdy_pred.reshape(15,15).detach(),color='r')
-    ax.legend(['true','predicted'])
+    ax[0].quiver(xv, yv, dfdx, dfdy)
+    ax[0].quiver(xv, yv, dfdx_pred.reshape(15,15).detach(), dfdy_pred.reshape(15,15).detach(),color='r')
+    ax[0].legend(['true','predicted'])
+
+    ax[1].plot(loss_save.detach().log().numpy())
     plt.show()
