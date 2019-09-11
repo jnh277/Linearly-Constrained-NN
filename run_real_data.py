@@ -155,16 +155,16 @@ for epoch in range(train_iters):
     for x_train, mag_train in training_generator:
         optimizer.zero_grad()
         (yhat, y1hat, y2hat, y3hat) = model(x_train)
-        loss = criterion(mag_train[:,0], y1hat) + criterion(mag_train[:,1], y2hat) + \
-               criterion(mag_train[:,2], y3hat)
+        loss = (criterion(mag_train[:,0], y1hat) + criterion(mag_train[:,1], y2hat) + \
+               criterion(mag_train[:,2], y3hat)) # /3 for mean
         print('epoch: ', epoch, ' loss: ', loss.item())
         loss.backward()
         optimizer.step()
     loss_save[epoch, 0] = loss
 
     (yhat, y1hat, y2hat, y3hat) = model(x_train)
-    val_loss = criterion(mag_val[:,0], y1hat) + criterion(mag_val[:,1], y2hat) + \
-               criterion(mag_val[:,2], y3hat)
+    val_loss = (criterion(mag_val[:,0], y1hat) + criterion(mag_val[:,1], y2hat) + \
+               criterion(mag_val[:,2], y3hat))/3 # /3 for mean
     val_loss_save[epoch,0] = val_loss
     scheduler.step(epoch)
 

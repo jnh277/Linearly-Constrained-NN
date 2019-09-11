@@ -1,14 +1,37 @@
+import math
 import torch
+import torch.nn as nn
 from matplotlib import pyplot as plt
 from torch.utils import data
 
 
-
+# these are nice values for demonstration with 2000 data points
 n_in = 2
 n_h1 = 100
 n_h2 = 50
-n_h3 = 50
+# n_h3 = 50  # not using this layer atm
 n_o = 1
+
+# these are nice values to demonstrate taht with plenty of data the constrained needs smaller net
+# n_in = 2
+# n_h1 = 25
+# n_h2 = 12
+# # n_h3 = 50  # not using this layer atm
+# n_o = 1
+
+
+
+n_o_uc = 2  # there are two outputs for the unconstrained case
+
+sc = 3  # scale net size
+
+model_uc = torch.nn.Sequential(
+    torch.nn.Linear(n_in, n_h1*sc),
+    torch.nn.Tanh(),
+    torch.nn.Linear(n_h1*sc, n_h2*sc),
+    torch.nn.Tanh(),
+    torch.nn.Linear(n_h2*sc, n_o_uc),
+)
 
 class DerivTanh(torch.nn.Module):
     def __init__(self):
@@ -105,7 +128,8 @@ def vector_field(x, y, c1x=0.5, c1y=0.8, c2x=0.5, c2y=0.2,l1=0.18,l2=0.18):
 
 
 ## generate data
-x_train = torch.rand(8000,2)
+n_data = 6000
+x_train = torch.rand(n_data, 2)
 x1_train = x_train[:, 0].unsqueeze(1)
 x2_train = x_train[:, 1].unsqueeze(1)
 
@@ -120,6 +144,8 @@ x2_val = x_val[:, 1].unsqueeze(1)
 (v1, v2) = vector_field(x1_val, x2_val)
 y1_val = v1 + 0.1 * torch.randn(x1_val.size())
 y2_val = v2 + 0.1 * torch.randn(x1_val.size())
+
+y_val = torch.cat((y1_val, y2_val), 1)
 
 # now put data in a convenient dataset and data loader
 
@@ -148,18 +174,19 @@ class Dataset(data.Dataset):
 
 training_set = Dataset(x1_train,x2_train,y1_train,y2_train)
 
+
 # data loader Parameters
 DL_params = {'batch_size': 500,
           'shuffle': True,
           'num_workers': 4}
 training_generator = data.DataLoader(training_set, **DL_params)
 
-## train
+## train constrained model
 criterion = torch.nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 50, gamma=0.25, last_epoch=-1)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 25, gamma=0.25, last_epoch=-1)
 
-train_iters = 200
+train_iters = 125
 loss_save = torch.empty(train_iters, 1)
 val_loss_save = torch.empty(train_iters, 1)
 
@@ -169,16 +196,50 @@ for epoch in range(train_iters):
         x_train = torch.cat((x1_train, x2_train), 1)
 
         (yhat, v1hat, v2hat) = model(x_train)
-        loss = (criterion(y1_train, v1hat) + criterion(y2_train, v2hat))/2 # divide by 2 as it is a mean
+
+        y_train = torch.cat((y1_train, y2_train), 1)
+        v_hat = torch.cat((v1hat, v2hat), 1)
+        loss = criterion(y_train, v_hat)
+        # loss = (criterion(y1_train, v1hat) + criterion(y2_train, v2hat))/2 # this should be divide by 2
         print('epoch: ', epoch, ' loss: ', loss.item())
         loss.backward()
         optimizer.step()
     loss_save[epoch, 0] = loss
 
     (yhat, v1hat, v2hat) = model(x_val)
-    val_loss = (criterion(y1_val, v1hat) + criterion(y2_val, v2hat))/2 # divide by 2 as it is a mean
+    v_hat = torch.cat((v1hat, v2hat), 1)
+    val_loss = criterion(y_val, v_hat)
+    # val_loss = (criterion(y1_val, v1hat) + criterion(y2_val, v2hat))/2
     val_loss_save[epoch,0] = val_loss
     scheduler.step(epoch)
+
+## train the unconstrained model
+criterion = torch.nn.MSELoss()
+optimizer_uc = torch.optim.Adam(model_uc.parameters(), lr=0.01)
+scheduler_uc = torch.optim.lr_scheduler.StepLR(optimizer_uc, 25, gamma=0.25, last_epoch=-1)
+
+
+loss_save_uc = torch.empty(train_iters, 1)
+val_loss_save_uc = torch.empty(train_iters, 1)
+
+for epoch in range(train_iters):
+    for x1_train, x2_train, y1_train, y2_train in training_generator:
+        optimizer_uc.zero_grad()
+        x_train = torch.cat((x1_train, x2_train), 1)
+
+        (vhat) = model_uc(x_train)
+        y_train = torch.cat((y1_train, y2_train), 1)
+        loss = criterion(y_train, vhat)
+        # loss = criterion(y1_train, vhat[:,0]) + criterion(y2_train, vhat[:,1])
+        print('epoch: ', epoch, ' loss: ', loss.item())
+        loss.backward()
+        optimizer_uc.step()
+    loss_save_uc[epoch, 0] = loss
+
+    (vhat) = model_uc(x_val)
+    val_loss = criterion(y_val, vhat)
+    val_loss_save_uc[epoch,0] = val_loss
+    scheduler_uc.step(epoch)
 
 # plot the true functions
 xv, yv = torch.meshgrid([torch.arange(0.0,15.0)/15.0, torch.arange(0.0,15.0)/15.0])
@@ -192,15 +253,21 @@ xv, yv = torch.meshgrid([torch.arange(0.0,15.0)/15.0, torch.arange(0.0,15.0)/15.
 x_pred = torch.cat((xv.reshape(15*15,1), yv.reshape(15*15,1)),1)
 (f_pred, v1_pred, v2_pred) = model(x_pred)
 
+(v_uc_pred) = model_uc(x_pred)
+
 with torch.no_grad():
     # Initialize plot
     f, ax = plt.subplots(2, 1, figsize=(4, 6))
     # ax.pcolor(xv,yv,f_scalar)
     ax[0].quiver(xv, yv, v1, v2)
-    ax[0].quiver(xv, yv, v1_pred.reshape(15,15).detach(), v2_pred.reshape(15,15).detach(),color='r')
-    ax[0].legend(['true','predicted'])
+    ax[0].quiver(xv, yv, v1_pred.reshape(15,15).detach(), v2_pred.reshape(15,15).detach(),color='g')
+    ax[0].quiver(xv, yv, v_uc_pred[:,0].reshape(15,15).detach(), v_uc_pred[:,1].reshape(15,15).detach(),color='r')
+    ax[0].legend(['true', 'constrained', 'unconstrained'])
 
     ax[1].plot(loss_save.detach().log().numpy())
-    ax[1].plot(val_loss_save.detach().log().numpy(),color='r')
+    ax[1].plot(val_loss_save.detach().log().numpy())
+    ax[1].plot(loss_save_uc.detach().log().numpy(), linestyle='--')
+    ax[1].plot(val_loss_save_uc.detach().log().numpy(), linestyle='--')
     ax[1].set_ylabel('log loss')
+    ax[1].legend(['constrained training', 'constrained val', 'unconstrained training', 'unconstrained val'])
     plt.show()
