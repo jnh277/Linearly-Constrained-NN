@@ -1,4 +1,5 @@
 import torch
+from torch.utils import data
 
 
 class DerivTanh(torch.nn.Module):
@@ -80,3 +81,27 @@ class DerivNet2D(torch.nn.Module):
         v1 = dydx2
         v2 = -dydx1
         return (y, v1, v2)
+
+class Dataset(data.Dataset):
+    'Characterizes a dataset for PyTorch'
+
+    def __init__(self, x1, x2, y1, y2):
+        'Initialization'
+        self.x1 = x1
+        self.x2 = x2
+        self.y1 = y1
+        self.y2 = y2
+
+    def __len__(self):
+        'Denotes the total number of samples'
+        return len(self.x1)
+
+    def __getitem__(self, index):
+        'Generates one sample of data'
+        # Select sample
+        x1 = self.x1[index]
+        x2 = self.x2[index]
+        y1 = self.y1[index]
+        y2 = self.y2[index]
+
+        return x1, x2, y1, y2
