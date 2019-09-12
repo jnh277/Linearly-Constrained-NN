@@ -4,11 +4,16 @@ from torch.utils import data
 import models
 
 
-torch.manual_seed(2)
+torch.manual_seed(5)
+
+# n_in = 2
+# n_h1 = 100
+# n_h2 = 50
+# n_o = 1
 
 n_in = 2
-n_h1 = 100
-n_h2 = 50
+n_h1 = 10
+n_h2 = 5
 n_o = 1
 
 n_o_uc = 2
@@ -16,11 +21,13 @@ n_o_uc = 2
 # Using the same constant Neural network size for both models,
 # compare performance as the measurement data size is increased
 
-n_data_tests = [100, 200, 300, 400, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000]
-# n_data_tests = [1000, 3000]
-n_tests = len(n_data_tests)
+sc_tests = [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
 
-n_trials = 2   # number of trials per each test
+n_data = 2000
+# n_data_tests = [1000, 3000]
+n_tests = len(sc_tests)
+
+n_trials = 5   # number of trials per each test
 
 def vector_field(x, y, a=0.01):
     v1 = torch.exp(-a*x*y)*(a*x*torch.sin(x*y) - x*torch.cos(x*y))
@@ -56,18 +63,19 @@ for test in range(n_tests):
         if 'model_uc' in locals():
             del model_uc
 
-        model = models.DerivNet2D(n_in, n_h1, n_h2, n_o)
+        sc = sc_tests[test]
+        model = models.DerivNet2D(n_in, n_h1*sc, n_h2*sc, n_o)
 
         model_uc = torch.nn.Sequential(
-            torch.nn.Linear(n_in, n_h1),
+            torch.nn.Linear(n_in, n_h1*sc),
             torch.nn.Tanh(),
-            torch.nn.Linear(n_h1, n_h2),
+            torch.nn.Linear(n_h1*sc, n_h2*sc),
             torch.nn.Tanh(),
-            torch.nn.Linear(n_h2, n_o_uc),
+            torch.nn.Linear(n_h2*sc, n_o_uc),
         )
 
         ## generate data and put into a data loader
-        n_data = n_data_tests[test]
+
 
         x_train = 4.0*torch.rand(n_data,2)
         x1_train = x_train[:, 0].unsqueeze(1)
@@ -194,16 +202,21 @@ x_pred = torch.cat((xv.reshape(20*20,1), yv.reshape(20*20,1)),1)
 v1_pred_uc = v_pred_uc[:,0]
 v2_pred_uc = v_pred_uc[:,1]
 
+# network_sizes = sc_tests*(10+5)
+network_sizes = torch.empty(11,1)
+for i in range(n_tests):
+    network_sizes[i] = sc_tests[i]*(10+5)
+
 with torch.no_grad():
     # Initialize plot
     f,ax = plt.subplots(1, 1, figsize=(4, 3))
-    ax.plot(n_data_tests,rms_error_save.detach().numpy())
-    ax.plot(n_data_tests,rms_error_save_uc.detach().numpy(),color='r')
-    ax.set_xlabel('Number of observations')
+    ax.plot(network_sizes.numpy(),rms_error_save.detach().numpy())
+    ax.plot(network_sizes.numpy(),rms_error_save_uc.detach().numpy(),color='r')
+    ax.set_xlabel('Network size (neurons)')
     ax.set_ylabel('rms error')
     ax.legend(['our approach','unconstrained'])
     plt.show()
-    # f.savefig('sim_n_data_study.eps', format='eps')
+    # f.savefig('sim_net_size_study.eps', format='eps')
 
     # # Initialize second plot
     # f2, ax2 = plt.subplots(1, 3, figsize=(13, 4))
