@@ -6,7 +6,7 @@ import numpy as np
 from scipy.interpolate import griddata
 from matplotlib import pyplot as plt
 import models
-# from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d import Axes3D
 
 mag_data=sio.loadmat('/Users/johannes/Documents/GitHub/Linearly-Constrained-NN/real_data/magnetic_field_data.mat')
 
@@ -24,7 +24,7 @@ perm = torch.randperm(n)
 pos = pos[perm, :]
 mag = mag[perm, :]
 
-# normalising inputs (would this effect the constraints)??? maybe
+# normalising inputs (would this effect the constraints)??? no
 min_x = pos[:, 0].min()
 min_y = pos[:, 1].min()
 min_z = pos[:, 2].min()
@@ -35,9 +35,9 @@ max_z = pos[:, 2].max()
 
 # X = pos.copy()
 X = torch.from_numpy(pos).float()
-# X[:, 0] = (X[:, 0]-min_x)/(max_x-min_x)*2.0 - 1.0
-# X[:, 1] = (X[:, 1]-min_y)/(max_y-min_y)*2.0 - 1.0
-# X[:, 2] = (X[:, 2]-min_z)/(max_z-min_z)*2.0 - 1.0
+X[:, 0] = (X[:, 0]-min_x)/(max_x-min_x)*2.0 - 1.0
+X[:, 1] = (X[:, 1]-min_y)/(max_y-min_y)*2.0 - 1.0
+X[:, 2] = (X[:, 2]-min_z)/(max_z-min_z)*2.0 - 1.0
 
 min_mag1 = mag[:, 0].min()
 min_mag2 = mag[:, 1].min()
@@ -48,11 +48,10 @@ max_mag2 = mag[:, 1].max()
 max_mag3 = mag[:, 2].max()
 
 y = torch.from_numpy(mag).float()
-
 # # see if output scaling helps (didnt help)
-# y[:, 0] = (y[:, 0] - min_mag1)/(max_mag1-min_mag1)*2.0 - 1.0
-# y[:, 1] = (y[:, 1] - min_mag2)/(max_mag2-min_mag2)*2.0 - 1.0
-# y[:, 2] = (y[:, 2] - min_mag3)/(max_mag3-min_mag3)*2.0 - 1.0
+y[:, 0] = (y[:, 0] - min_mag1)/(max_mag1-min_mag1)*2.0 - 1.0
+y[:, 1] = (y[:, 1] - min_mag2)/(max_mag2-min_mag2)*2.0 - 1.0
+y[:, 2] = (y[:, 2] - min_mag3)/(max_mag3-min_mag3)*2.0 - 1.0
 
 
 
@@ -81,7 +80,7 @@ nt = n - nv
 
 training_set = Dataset(X[0:nt,:], y[0:nt,:])
 # data loader Parameters
-DL_params = {'batch_size': 100,
+DL_params = {'batch_size': 500,
           'shuffle': True,
           'num_workers': 4}
 training_generator = data.DataLoader(training_set, **DL_params)
@@ -94,16 +93,25 @@ n_in = 3
 n_h1 = 100
 n_h2 = 50
 n_h3 = 25
-# n_h3 = 2
 n_o = 1
 
+n_o_uc = 3
 
+model_uc = torch.nn.Sequential(
+    torch.nn.Linear(n_in, n_h1),
+    torch.nn.Tanh(),
+    torch.nn.Linear(n_h1, n_h2),
+    torch.nn.Tanh(),
+    torch.nn.Linear(n_h2, n_h3),
+    torch.nn.Tanh(),
+    torch.nn.Linear(n_h3, n_o_uc),
+)
 
-model = models.DerivNet3D(n_in, n_h1, n_h2, n_h3, n_o)
+# model = models.DerivNet3D(n_in, n_h1, n_h2, n_o)
 
 ## train
 criterion = torch.nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+optimizer = torch.optim.Adam(model_uc.parameters(), lr=0.01)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 50, gamma=0.5, last_epoch=-1)
 
 train_iters = 350
@@ -114,21 +122,20 @@ val_loss_save = torch.empty(train_iters, 1)
 for epoch in range(train_iters):
     for x_train, mag_train in training_generator:
         optimizer.zero_grad()
-        (yhat, y1hat, y2hat, y3hat) = model(x_train)
-        vhat = torch.cat((y1hat,y2hat,y3hat), 1)
-        # loss = (criterion(mag_train[:,0], y1hat) + criterion(mag_train[:,1], y2hat) +
-        #         criterion(mag_train[:,2], y3hat))/3 # /3 for mean
+        # (yhat, y1hat, y2hat, y3hat) = model(x_train)
+        vhat = model_uc(x_train)
+        # loss = (criterion(mag_train[:,0], y1hat) + criterion(mag_train[:,1], y2hat) + \
+        #        criterion(mag_train[:,2], y3hat)) # /3 for mean
         loss = criterion(mag_train, vhat)
-
         loss.backward()
         optimizer.step()
     loss_save[epoch, 0] = loss
 
-    (yhat, y1hat, y2hat, y3hat) = model(X_val)
-    vhat = torch.cat((y1hat, y2hat, y3hat), 1)
-    # val_loss = (criterion(mag_val[:,0], y1hat) + criterion(mag_val[:,1], y2hat) +
-    #             criterion(mag_val[:,2], y3hat))/3 # /3 for mean
+    vhat = model_uc(X_val)
     val_loss = criterion(mag_val, vhat)
+    # (yhat, y1hat, y2hat, y3hat) = model(X_val)
+    # val_loss = (criterion(mag_val[:,0], y1hat) + criterion(mag_val[:,1], y2hat) + \
+    #            criterion(mag_val[:,2], y3hat))/3 # /3 for mean
     print('epoch: ', epoch, 'val loss: ', val_loss.item())
     val_loss_save[epoch,0] = val_loss
     scheduler.step(epoch)
@@ -147,7 +154,10 @@ yv = torch.from_numpy(grid_y).float()
 zv = torch.from_numpy(grid_z).float()
 
 X_pred = torch.cat((xv.reshape(10*10,1), yv.reshape(10*10,1), zv.reshape(10*10,1)),1)
-(fpred, f1pred, f2pred, f3pred) = model(X_pred)
+v_pred_uc = model_uc(X_pred)
+f1pred = v_pred_uc[:,0]
+f2pred = v_pred_uc[:,1]
+f3pred = v_pred_uc[0,2]
 
 with torch.no_grad():
     # Initialize plot
