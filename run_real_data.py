@@ -81,7 +81,7 @@ nt = n - nv
 
 training_set = Dataset(X[0:nt,:], y[0:nt,:])
 # data loader Parameters
-DL_params = {'batch_size': 100,
+DL_params = {'batch_size': 500,
           'shuffle': True,
           'num_workers': 4}
 training_generator = data.DataLoader(training_set, **DL_params)

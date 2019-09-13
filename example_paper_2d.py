@@ -14,7 +14,9 @@ n_o = 1
 n_o_uc = 2
 
 
-model = models.DerivNet2D(n_in, n_h1, n_h2, n_o)
+model = models.DerivNet2D_v2(n_in, n_h1, n_h2, n_o)   # quadratic layers
+
+# model = models.DerivNet2D(n_in, n_h1, n_h2, n_o) # normal layers
 
 model_uc = torch.nn.Sequential(
     torch.nn.Linear(n_in, n_h1),
@@ -36,6 +38,7 @@ def vector_field(x, y, a=0.01):
 
 ## generate data
 x_train = 4.0*torch.rand(200,2)
+# x_train = 4.0*torch.rand(200,2)  # good amount for with standard layer design
 x1_train = x_train[:, 0].unsqueeze(1)
 x2_train = x_train[:, 1].unsqueeze(1)
 
