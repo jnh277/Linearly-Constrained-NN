@@ -3,8 +3,7 @@ from matplotlib import pyplot as plt
 from torch.utils import data
 import models
 
-
-torch.manual_seed(2)
+torch.manual_seed(10)
 
 n_in = 2
 n_h1 = 100
@@ -20,7 +19,7 @@ n_data_tests = [100, 200, 300, 400, 500, 1000, 1500, 2000, 2500, 3000, 3500, 400
 # n_data_tests = [1000, 3000]
 n_tests = len(n_data_tests)
 
-n_trials = 2   # number of trials per each test
+n_trials = 20   # number of trials per each test
 
 def vector_field(x, y, a=0.01):
     v1 = torch.exp(-a*x*y)*(a*x*torch.sin(x*y) - x*torch.cos(x*y))
@@ -85,7 +84,7 @@ for test in range(n_tests):
         # data loader Parameters
         DL_params = {'batch_size': 100,
                   'shuffle': True,
-                  'num_workers': 4}
+                  'num_workers': 0}
         training_generator = data.DataLoader(training_set, **DL_params)
 
         train_iters = 300
@@ -203,7 +202,7 @@ with torch.no_grad():
     ax.set_ylabel('rms error')
     ax.legend(['our approach','unconstrained'])
     plt.show()
-    # f.savefig('sim_n_data_study.eps', format='eps')
+    f.savefig('sim_n_data_study.eps', format='eps')
 
     # # Initialize second plot
     # f2, ax2 = plt.subplots(1, 3, figsize=(13, 4))
