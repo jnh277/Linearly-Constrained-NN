@@ -4,7 +4,7 @@ from torch.utils import data
 import models
 
 
-torch.manual_seed(2)
+torch.manual_seed(10)
 
 n_in = 2
 n_h1 = 100
@@ -85,7 +85,7 @@ for test in range(n_tests):
         # data loader Parameters
         DL_params = {'batch_size': 100,
                   'shuffle': True,
-                  'num_workers': 4}
+                  'num_workers': 0}
         training_generator = data.DataLoader(training_set, **DL_params)
 
         train_iters = 300
