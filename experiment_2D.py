@@ -104,8 +104,7 @@ criterion = torch.nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01)   # these should also be setable parameters
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10,
                                                  min_lr=1e-10,
-                                                 factor=0.5,
-                                                 cooldown=5)
+                                                 factor=0.5)
 # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 25, gamma=0.5, last_epoch=-1)
 
 def train(epoch):
@@ -153,8 +152,7 @@ rms_error = torch.sqrt(sum(error_new * error_new) / 800)
 optimizer_uc = torch.optim.Adam(model_uc.parameters(), lr=0.01)
 scheduler_uc = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_uc, patience=10,
                                                  min_lr=1e-10,
-                                                 factor=0.5,
-                                                cooldown=5)
+                                                 factor=0.5)
 
 def train_uc(epoch):
     model_uc.train()
