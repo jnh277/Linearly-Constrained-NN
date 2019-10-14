@@ -3,6 +3,7 @@ import os
 import sys
 import json
 import argparse
+import scipy.io as sio
 import torch
 import datetime
 import torch.optim as optim
@@ -12,7 +13,7 @@ from tqdm import tqdm
 from torch.utils.data import DataLoader
 from warnings import warn
 
-description = "Train model to automatically classify ECG tracings"
+description = "Test argument parser"
 
 # Arguments that will be saved in config file
 parser = argparse.ArgumentParser(add_help=False)
@@ -32,11 +33,20 @@ parser.add_argument('--batch_size', type=int, default=100,
 #                            help='reducing factor for the lr in a plateu (default: 0.1)')
 parser.add_argument('--net_hidden_size', type=int, nargs='+', default=[100,50],
                            help='two hidden layer sizes (default: [100,50]).')
+parser.add_argument('--show_plot', type=bool, default=False,
+                    help='Enable or disable plotting (default:False)')
+parser.add_argument('--save_file', default='', help='save file name (default: wont save)')
+
 
 
 args = parser.parse_args()
 
 print(args.epochs)
+
+# converst args (namespace) to dict
+if args.save_file is not '':
+    d = vars(args)
+    sio.savemat('./results/'+ args.save_file, d)
 
 
 

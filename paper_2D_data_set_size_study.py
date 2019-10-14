@@ -17,7 +17,7 @@ n_o_uc = 2
 # compare performance as the measurement data size is increased
 
 # n_data_tests = [100, 200, 300, 400, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000]
-n_data_tests = [1000, 3000]
+n_data_tests = [1000, 2000]
 n_tests = len(n_data_tests)
 
 n_trials = 2   # number of trials per each test
