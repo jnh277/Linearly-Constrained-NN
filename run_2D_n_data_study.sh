@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # make executable with the following
-# chmod u+x test_shell_script.sh
+# chmod u+x run_2D_n_data_study.sh
 # run using ./run_2D_n_data_study.sh
 
 
@@ -10,6 +10,6 @@ for nd in 100 2000
 do
     for i in {1..2}
     do
-        python experiment_2D.py --n_data $nd --save_file n_data_${nd}_trial_{i}
+        python experiment_2D.py --n_data $nd --save_file n_data_study/exp_${nd}_trial_${i}
     done
 done
