@@ -10,6 +10,6 @@ for nd in 100 2000
 do
     for i in {1..2}
     do
-        python experiment_2D.py --n_data $nd --save_file 
+        python experiment_2D.py --n_data $nd --save_file n_data_${nd}_trial_{i}
     done
 done
