@@ -22,11 +22,14 @@ parser.add_argument('--n_data', type=int, default=3000,
                         help='set number of measurements (default:2000)')
 parser.add_argument('--num_workers', type=int, default=2,
                         help='number of workers for data loader (default:4)')
-parser.add_argument('--show_plot', type=bool, default=False,
-                    help='Enable or disable plotting (default:False)')
+parser.add_argument('--show_plot', action='store_true',
+                    help='Enable plotting (default:False)')
 parser.add_argument('--save_file', default='', help='save file name (default: wont save)')
-parser.add_argument('--cuda', type=bool, default=False,
-                    help='Enable cuda, will use cuda:0 (default:False)')
+parser.add_argument('--pin_memory', action='store_true',
+                    help='enables pin memory (default:False)')
+# for this problem using cuda was slower so have removed teh associated code
+# parser.add_argument('--cuda', action='store_true',
+#                     help='Enable cuda, will use cuda:0 (default:False)')
 # parser.add_argument('--seed', type=int, default=10,
 #                            help='random seed for number generator (default: 10)')
 
@@ -36,8 +39,7 @@ args = parser.parse_args()
 # torch.manual_seed(args.seed)
 
 n_data = args.n_data
-device = torch.device('cuda:0' if args.cuda else 'cpu')
-pin_memory = args.cuda              # if using cuda then pin memory
+pin_memory = args.pin_memory
 
 def vector_field(x, y, a=0.01):
     v1 = torch.exp(-a*x*y)*(a*x*torch.sin(x*y) - x*torch.cos(x*y))
@@ -66,9 +68,6 @@ model_uc = torch.nn.Sequential(
     torch.nn.Linear(n_h2, n_o_uc),
 )
 
-# send models to GPU
-model.to(device)
-model_uc.to(device)
 
 # pregenerate validation data
 x_val = 4.0 * torch.rand(2000, 2)
@@ -80,12 +79,6 @@ y1_val = v1 + 0.1 * torch.randn(x1_val.size())
 y2_val = v2 + 0.1 * torch.randn(x1_val.size())
 y_val = torch.cat((y1_val, y2_val), 1)
 
-y1_val = y1_val.to(device)
-y2_val = y2_val.to(device)
-y_val = y_val.to(device)
-x1_val = x1_val.to(device)
-x2_val = x2_val.to(device)
-x_val = x_val.to(device)
 
 
 # Get the true function values on a grid
@@ -124,13 +117,8 @@ def train(epoch):
     total_loss = 0
     n_batches = 0
     for x1_train, x2_train, y1_train, y2_train in training_generator:
-        x1_train = x1_train.to(device)
-        x2_train = x2_train.to(device)
-        y1_train = y1_train.to(device)
-        y2_train = y2_train.to(device)
         optimizer.zero_grad()
         x_train = torch.cat((x1_train, x2_train), 1)
-
         (yhat, v1hat, v2hat) = model(x_train)
         loss = (criterion(y1_train, v1hat) + criterion(y2_train, v2hat)) / 2  # divide by 2 as it is a mean
         loss.backward()
@@ -158,8 +146,6 @@ for epoch in range(args.epochs):
     val_loss[epoch] = v_loss.detach().numpy()
     print(args.save_file, 'InvarianT NN: epoch: ', epoch, 'training loss ', train_loss[epoch], 'validation loss', val_loss[epoch])
 
-# move model to cpu
-model.cpu()
 
 # work out the rms error for this one
 x_pred = torch.cat((xv.reshape(20 * 20, 1), yv.reshape(20 * 20, 1)), 1)
@@ -178,10 +164,6 @@ def train_uc(epoch):
     total_loss = 0
     n_batches = 0
     for x1_train, x2_train, y1_train, y2_train in training_generator:
-        x1_train = x1_train.to(device)
-        x2_train = x2_train.to(device)
-        y1_train = y1_train.to(device)
-        y2_train = y2_train.to(device)
         optimizer_uc.zero_grad()
         x_train = torch.cat((x1_train, x2_train), 1)
         vhat = model_uc(x_train)
@@ -213,7 +195,6 @@ for epoch in range(args.epochs):
     print(args.save_file, 'Standard NN: epoch: ', epoch, 'training loss ', train_loss_uc[epoch], 'validation loss', val_loss_uc[epoch])
 
 # move model to cpu
-model_uc.cpu()
 
 # work out final rms error for unconstrainted net
 # work out the rms error for this trial
