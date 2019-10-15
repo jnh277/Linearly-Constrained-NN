@@ -6,7 +6,7 @@
 
 
 # for nd in 100 200 300 400 500 1000 1500 2000 2500 3000 3500 4000
-for nd in 100 2000
+for nd in 4000
 do
     for i in 1 2
     do
