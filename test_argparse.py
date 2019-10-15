@@ -41,12 +41,12 @@ parser.add_argument('--save_file', default='', help='save file name (default: wo
 
 args = parser.parse_args()
 
-print(args.epochs)
+print(args.save_file, ' help me')
 
 # converst args (namespace) to dict
 if args.save_file is not '':
     d = vars(args)
-    sio.savemat('./results/'+ args.save_file, d)
+    sio.savemat('./results/'+ args.save_file+'.mat', d)
 
 
 

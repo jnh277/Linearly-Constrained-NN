@@ -140,7 +140,7 @@ for epoch in range(args.epochs):
     v_loss = eval(epoch)
     scheduler.step(v_loss)
     val_loss[epoch] = v_loss.detach().numpy()
-    print('InvarianT NN: epoch: ', epoch, 'training loss ', train_loss[epoch], 'validation loss', val_loss[epoch])
+    print(args.save_file, 'InvarianT NN: epoch: ', epoch, 'training loss ', train_loss[epoch], 'validation loss', val_loss[epoch])
 
 # work out the rms error for this one
 x_pred = torch.cat((xv.reshape(20 * 20, 1), yv.reshape(20 * 20, 1)), 1)
@@ -187,7 +187,7 @@ for epoch in range(args.epochs):
     v_loss = eval_uc(epoch)
     scheduler_uc.step(v_loss)
     val_loss_uc[epoch] = v_loss.detach().numpy()
-    print('Standard NN: epoch: ', epoch, 'training loss ', train_loss_uc[epoch], 'validation loss', val_loss_uc[epoch])
+    print(args.save_file, 'Standard NN: epoch: ', epoch, 'training loss ', train_loss_uc[epoch], 'validation loss', val_loss_uc[epoch])
 
 
 # work out final rms error for unconstrainted net
@@ -208,7 +208,7 @@ if args.save_file is not '':
     data['val_loss_uc'] = val_loss_uc
     data['final_rms_error'] = rms_error
     data['final_rms_error_uc'] = rms_uc
-    sio.savemat('./results/'+ args.save_file, data)
+    sio.savemat('./results/'+ args.save_file+'.mat', data)
 
 
 if args.show_plot:
