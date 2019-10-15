@@ -36,7 +36,8 @@ parser.add_argument('--net_hidden_size', type=int, nargs='+', default=[100,50],
 parser.add_argument('--show_plot', type=bool, default=False,
                     help='Enable or disable plotting (default:False)')
 parser.add_argument('--save_file', default='', help='save file name (default: wont save)')
-
+parser.add_argument('--cuda', type=bool, default=False,
+                    help='Enable cuda, will use cuda:0 (default:False)')
 
 
 args = parser.parse_args()

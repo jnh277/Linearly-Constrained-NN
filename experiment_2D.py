@@ -22,11 +22,11 @@ parser.add_argument('--n_data', type=int, default=3000,
                         help='set number of measurements (default:2000)')
 parser.add_argument('--num_workers', type=int, default=2,
                         help='number of workers for data loader (default:4)')
-parser.add_argument('--pin_memory', type=bool, default=False,
-                        help='pin memory in data loader (default:False)')
 parser.add_argument('--show_plot', type=bool, default=False,
                     help='Enable or disable plotting (default:False)')
 parser.add_argument('--save_file', default='', help='save file name (default: wont save)')
+parser.add_argument('--cuda', type=bool, default=False,
+                    help='Enable cuda, will use cuda:0 (default:False)')
 # parser.add_argument('--seed', type=int, default=10,
 #                            help='random seed for number generator (default: 10)')
 
@@ -36,7 +36,8 @@ args = parser.parse_args()
 # torch.manual_seed(args.seed)
 
 n_data = args.n_data
-
+device = torch.device('cuda:0' if args.cuda else 'cpu')
+pin_memory = args.cuda              # if using cuda then pin memory
 
 def vector_field(x, y, a=0.01):
     v1 = torch.exp(-a*x*y)*(a*x*torch.sin(x*y) - x*torch.cos(x*y))
@@ -65,6 +66,9 @@ model_uc = torch.nn.Sequential(
     torch.nn.Linear(n_h2, n_o_uc),
 )
 
+# send models to GPU
+model.to(device)
+model_uc.to(device)
 
 # pregenerate validation data
 x_val = 4.0 * torch.rand(2000, 2)
@@ -75,6 +79,14 @@ x2_val = x_val[:, 1].unsqueeze(1)
 y1_val = v1 + 0.1 * torch.randn(x1_val.size())
 y2_val = v2 + 0.1 * torch.randn(x1_val.size())
 y_val = torch.cat((y1_val, y2_val), 1)
+
+y1_val = y1_val.to(device)
+y2_val = y2_val.to(device)
+y_val = y_val.to(device)
+x1_val = x1_val.to(device)
+x2_val = x2_val.to(device)
+x_val = x_val.to(device)
+
 
 # Get the true function values on a grid
 xv, yv = torch.meshgrid([torch.arange(0.0, 20.0) * 4.0 / 20.0, torch.arange(0.0, 20.0) * 4.0 / 20.0])
@@ -95,7 +107,7 @@ training_set = models.Dataset(x1_train, x2_train, y1_train, y2_train)
 DL_params = {'batch_size': args.batch_size,
              'shuffle': True,
              'num_workers': args.num_workers,
-             'pin_memory': args.pin_memory}
+             'pin_memory': pin_memory}
 training_generator = data.DataLoader(training_set, **DL_params)
 
 
@@ -112,6 +124,10 @@ def train(epoch):
     total_loss = 0
     n_batches = 0
     for x1_train, x2_train, y1_train, y2_train in training_generator:
+        x1_train = x1_train.to(device)
+        x2_train = x2_train.to(device)
+        y1_train = y1_train.to(device)
+        y2_train = y2_train.to(device)
         optimizer.zero_grad()
         x_train = torch.cat((x1_train, x2_train), 1)
 
@@ -119,7 +135,7 @@ def train(epoch):
         loss = (criterion(y1_train, v1hat) + criterion(y2_train, v2hat)) / 2  # divide by 2 as it is a mean
         loss.backward()
         optimizer.step()
-        total_loss += loss
+        total_loss += loss.cpu()
         n_batches += 1
     return total_loss / n_batches
 
@@ -128,7 +144,7 @@ def eval(epoch):
     with torch.no_grad():
         (yhat, v1hat, v2hat) = model(x_val)
         loss = (criterion(y1_val, v1hat) + criterion(y2_val, v2hat)) / 2
-    return loss
+    return loss.cpu()
 
 
 train_loss = np.empty([args.epochs, 1])
@@ -159,6 +175,10 @@ def train_uc(epoch):
     total_loss = 0
     n_batches = 0
     for x1_train, x2_train, y1_train, y2_train in training_generator:
+        x1_train = x1_train.to(device)
+        x2_train = x2_train.to(device)
+        y1_train = y1_train.to(device)
+        y2_train = y2_train.to(device)
         optimizer_uc.zero_grad()
         x_train = torch.cat((x1_train, x2_train), 1)
         vhat = model_uc(x_train)
@@ -166,7 +186,7 @@ def train_uc(epoch):
         loss = criterion(y_train, vhat)
         loss.backward()
         optimizer_uc.step()
-        total_loss += loss
+        total_loss += loss.cpu()
         n_batches += 1
     return total_loss / n_batches
 
@@ -175,7 +195,7 @@ def eval_uc(epoch):
     with torch.no_grad():
         (vhat) = model_uc(x_val)
         loss = criterion(y_val, vhat)
-    return loss
+    return loss.cpu()
 
 
 train_loss_uc = np.empty([args.epochs, 1])
