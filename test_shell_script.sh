@@ -8,7 +8,7 @@
 
 # python test_argparse.py --epochs 100
 
-for nd in 100 200 300 
+for nd in 100 200 300
 do
     for i in 1 2
     do
