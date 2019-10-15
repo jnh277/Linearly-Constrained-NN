@@ -13,6 +13,6 @@ do
     for i in 1 2
     do
         # python test_argparse.py --save_file exp_${nd}_trial_$i
-        python test_argparse.py --save_file n_data_study/exp_${nd}_trial_$i
+        python test_argparse.py --save_file n_data_study/exp_${nd}_trial_${i}.mat
     done
 done
