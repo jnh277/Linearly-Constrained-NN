@@ -206,8 +206,8 @@ if args.save_file is not '':
     data['val_loss'] = val_loss
     data['train_loss_uc'] = train_loss_uc
     data['val_loss_uc'] = val_loss_uc
-    data['final_rms_error'] = rms_error
-    data['final_rms_error_uc'] = rms_uc
+    data['final_rms_error'] = rms_error.detach().numpy()        # these are tensors so have to convert to numpy
+    data['final_rms_error_uc'] = rms_uc.detach().numpy()
     sio.savemat('./results/'+ args.save_file+'.mat', data)
 
 
