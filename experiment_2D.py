@@ -158,6 +158,9 @@ for epoch in range(args.epochs):
     val_loss[epoch] = v_loss.detach().numpy()
     print(args.save_file, 'InvarianT NN: epoch: ', epoch, 'training loss ', train_loss[epoch], 'validation loss', val_loss[epoch])
 
+# move model to cpu
+model.cpu()
+
 # work out the rms error for this one
 x_pred = torch.cat((xv.reshape(20 * 20, 1), yv.reshape(20 * 20, 1)), 1)
 (f_pred, v1_pred, v2_pred) = model(x_pred)
@@ -209,6 +212,8 @@ for epoch in range(args.epochs):
     val_loss_uc[epoch] = v_loss.detach().numpy()
     print(args.save_file, 'Standard NN: epoch: ', epoch, 'training loss ', train_loss_uc[epoch], 'validation loss', val_loss_uc[epoch])
 
+# move model to cpu
+model_uc.cpu()
 
 # work out final rms error for unconstrainted net
 # work out the rms error for this trial
