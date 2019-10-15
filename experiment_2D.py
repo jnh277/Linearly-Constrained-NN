@@ -208,7 +208,7 @@ if args.save_file is not '':
     data['val_loss_uc'] = val_loss_uc
     data['final_rms_error'] = rms_error
     data['final_rms_error_uc'] = rms_uc
-    sio.savemat('./results/' + args.save_file, data)
+    sio.savemat('./results/'+ args.save_file, data)
 
 
 if args.show_plot:
