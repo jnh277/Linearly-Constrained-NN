@@ -143,9 +143,9 @@ print('Training invariant NN')
 for epoch in range(args.epochs):
     train_loss[epoch] = train(epoch).detach().numpy()
     v_loss = eval(epoch)
-    scheduler.step(v_loss)
+    scheduler.step(epoch)   # input epoch for scheduled lr, val_loss for plateau
     val_loss[epoch] = v_loss.detach().numpy()
-    print(args.save_file, 'InvarianT NN: epoch: ', epoch, 'training loss ', train_loss[epoch], 'validation loss', val_loss[epoch])
+    print(args.save_file, 'Invariant NN: epoch: ', epoch, 'training loss ', train_loss[epoch], 'validation loss', val_loss[epoch])
 
 
 # work out the rms error for this one
@@ -192,7 +192,7 @@ print('Training standard NN')
 for epoch in range(args.epochs):
     train_loss_uc[epoch] = train_uc(epoch).detach().numpy()
     v_loss = eval_uc(epoch)
-    scheduler_uc.step(v_loss)
+    scheduler_uc.step(epoch)
     val_loss_uc[epoch] = v_loss.detach().numpy()
     print(args.save_file, 'Standard NN: epoch: ', epoch, 'training loss ', train_loss_uc[epoch], 'validation loss', val_loss_uc[epoch])
 
