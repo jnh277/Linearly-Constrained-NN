@@ -159,7 +159,7 @@ optimizer_uc = torch.optim.Adam(model_uc.parameters(), lr=0.01)
 # scheduler_uc = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_uc, patience=10,
 #                                                  min_lr=1e-10,
 #                                                  factor=0.5)
-scheduler_uc = torch.optim.lr_scheduler.StepLR(optimizer, 25, gamma=0.5, last_epoch=-1)
+scheduler_uc = torch.optim.lr_scheduler.StepLR(optimizer_uc, 25, gamma=0.5, last_epoch=-1)
 
 def train_uc(epoch):
     model_uc.train()
