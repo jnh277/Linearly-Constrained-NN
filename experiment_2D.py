@@ -10,7 +10,7 @@ description = "Train 2D constrained and unconstrained model"
 
 # Arguments that will be saved in config file
 parser = argparse.ArgumentParser(add_help=False)
-parser.add_argument('--epochs', type=int, default=300,
+parser.add_argument('--epochs', type=int, default=400,
                            help='maximum number of epochs (default: 300)')
 parser.add_argument('--seed', type=int, default=10,
                            help='random seed for number generator (default: 10)')
@@ -110,7 +110,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.01)   # these should also 
 # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10,
 #                                                  min_lr=1e-10,
 #                                                  factor=0.5)
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 25, gamma=0.5, last_epoch=-1)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 50, gamma=0.5, last_epoch=-1)
 # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 25, gamma=0.5, last_epoch=-1)
 
 def train(epoch):
@@ -159,7 +159,7 @@ optimizer_uc = torch.optim.Adam(model_uc.parameters(), lr=0.01)
 # scheduler_uc = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_uc, patience=10,
 #                                                  min_lr=1e-10,
 #                                                  factor=0.5)
-scheduler_uc = torch.optim.lr_scheduler.StepLR(optimizer_uc, 25, gamma=0.5, last_epoch=-1)
+scheduler_uc = torch.optim.lr_scheduler.StepLR(optimizer_uc, 50, gamma=0.5, last_epoch=-1)
 
 def train_uc(epoch):
     model_uc.train()
