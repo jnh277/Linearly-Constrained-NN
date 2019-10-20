@@ -12,8 +12,8 @@ description = "Train 2D constrained and unconstrained model"
 parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument('--epochs', type=int, default=400,
                            help='maximum number of epochs (default: 300)')
-parser.add_argument('--seed', type=int, default=10,
-                           help='random seed for number generator (default: 10)')
+# parser.add_argument('--seed', type=int, default=10,
+#                            help='random seed for number generator (default: 10)')
 parser.add_argument('--batch_size', type=int, default=100,
                            help='batch size (default: 100).')
 parser.add_argument('--net_hidden_size', type=int, nargs='+', default=[100,50],
@@ -27,6 +27,8 @@ parser.add_argument('--show_plot', action='store_true',
 parser.add_argument('--save_file', default='', help='save file name (default: wont save)')
 parser.add_argument('--pin_memory', action='store_true',
                     help='enables pin memory (default:False)')
+parser.add_argument('--scheduler', type=int, default=0,
+                    help='0 selects interval reduction, 1 selects plateau (default:0)')
 # for this problem using cuda was slower so have removed teh associated code
 # parser.add_argument('--cuda', action='store_true',
 #                     help='Enable cuda, will use cuda:0 (default:False)')
@@ -107,10 +109,13 @@ training_generator = data.DataLoader(training_set, **DL_params)
 # ---------------  Set up and train the constrained model -------------------------------
 criterion = torch.nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01)   # these should also be setable parameters
-# scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10,
-#                                                  min_lr=1e-10,
-#                                                  factor=0.5)
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 50, gamma=0.5, last_epoch=-1)
+if args.scheduler == 1:
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10,
+                                                     min_lr=1e-10,
+                                                     factor=0.5,
+                                                    cooldown=15)
+else:
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 40, gamma=0.5, last_epoch=-1)
 # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 25, gamma=0.5, last_epoch=-1)
 
 def train(epoch):
@@ -143,7 +148,10 @@ print('Training invariant NN')
 for epoch in range(args.epochs):
     train_loss[epoch] = train(epoch).detach().numpy()
     v_loss = eval(epoch)
-    scheduler.step(epoch)   # input epoch for scheduled lr, val_loss for plateau
+    if args.scheduler == 1:
+        scheduler.step(v_loss)
+    else:
+        scheduler.step(epoch)   # input epoch for scheduled lr, val_loss for plateau
     val_loss[epoch] = v_loss.detach().numpy()
     print(args.save_file, 'Invariant NN: epoch: ', epoch, 'training loss ', train_loss[epoch], 'validation loss', val_loss[epoch])
 
@@ -156,10 +164,13 @@ rms_error = torch.sqrt(sum(error_new * error_new) / 800)
 
 # ---------------  Set up and train the uncconstrained model -------------------------------
 optimizer_uc = torch.optim.Adam(model_uc.parameters(), lr=0.01)
-# scheduler_uc = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_uc, patience=10,
-#                                                  min_lr=1e-10,
-#                                                  factor=0.5)
-scheduler_uc = torch.optim.lr_scheduler.StepLR(optimizer_uc, 50, gamma=0.5, last_epoch=-1)
+if args.scheduler == 1:
+    scheduler_uc = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_uc, patience=10,
+                                                     min_lr=1e-10,
+                                                    factor=0.5,
+                                                    cooldown=15)
+else:
+    scheduler_uc = torch.optim.lr_scheduler.StepLR(optimizer_uc, 40, gamma=0.5, last_epoch=-1)
 
 def train_uc(epoch):
     model_uc.train()
@@ -192,7 +203,10 @@ print('Training standard NN')
 for epoch in range(args.epochs):
     train_loss_uc[epoch] = train_uc(epoch).detach().numpy()
     v_loss = eval_uc(epoch)
-    scheduler_uc.step(epoch)
+    if args.scheduler == 1:
+        scheduler_uc.step(v_loss)
+    else:
+        scheduler_uc.step(epoch)
     val_loss_uc[epoch] = v_loss.detach().numpy()
     print(args.save_file, 'Standard NN: epoch: ', epoch, 'training loss ', train_loss_uc[epoch], 'validation loss', val_loss_uc[epoch])
 
