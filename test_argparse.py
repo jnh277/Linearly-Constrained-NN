@@ -42,7 +42,8 @@ parser.add_argument('--cuda', type=bool, default=False,
 
 args = parser.parse_args()
 
-print(args.save_file, ' help me')
+# print(args.save_file, ' help me')
+print(args.net_hidden_size[1])
 
 # converst args (namespace) to dict
 if args.save_file is not '':
