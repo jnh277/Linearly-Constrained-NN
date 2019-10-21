@@ -13,9 +13,9 @@ do
     for i in 1 2
     do
 
-        # z=`expr $i \* 2`
+        z=`expr $i \* 2`
         #echo $z
-        python test_argparse.py --net_hidden_size 10 20
+        python test_argparse.py --net_hidden_size ${z} ${z}
         # python test_argparse.py --save_file n_data_study/exp_${nd}_trial_${i}
     done
 done
