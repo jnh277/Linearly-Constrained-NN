@@ -14,7 +14,7 @@ do
     for i in 1 2
     do
         z=`expr $sc \* 10`
-        v = `expr $sc \* 5`
-        python experiment_2D.py --n_data 2000 --net_hidden_size $z $v --save_file n_data_study/exp_${sc}_trial_${i} --epochs 400 --scheduler 1
+        v=`expr $sc \* 5`
+        python experiment_2D.py --n_data 2000 --net_hidden_size ${z} ${v} --save_file n_data_study/exp_${sc}_trial_${i} --epochs 400 --scheduler 1
     done
 done
