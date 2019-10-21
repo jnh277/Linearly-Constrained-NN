@@ -1,6 +1,6 @@
 % script for loading and plotting the resutls of n_data study
 
-files = dir('../results/n_data_study3/*.mat');
+files = dir('../results/n_data_study/*.mat');
 
 for i = 1:length(files)
     r(i) = load(strcat(files(i).folder,'/',files(i).name));
@@ -33,7 +33,7 @@ for i = 1:length(u_n_data)
 end
 
 %%
-figure(5)
+figure(7)
 set(gcf,'Position',[34         487        1080         438])
 subplot 121
 boxplot(log(rms_error.'),u_n_data)
@@ -49,7 +49,7 @@ ylabel('log rms error')
 title('Standard Neural Network')
 ylim([-4.1 0.5])
 
-figure(6)
+figure(8)
 plot(u_n_data,log(mean(rms_error,2)))
 hold on
 plot(u_n_data,log(mean(rms_error_uc,2)))
