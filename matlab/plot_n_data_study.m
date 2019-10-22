@@ -33,20 +33,24 @@ for i = 1:length(u_n_data)
 end
 
 %%
+fontsize = 20;
+
 figure(1)
 set(gcf,'Position',[34         487        1080         438])
 subplot 121
 boxplot(log(rms_error.'),u_n_data)
-xlabel('Number of measurements')
-ylabel('log rms error')
-title('Constrained Neural Network')
+set(gca,'FontSize',fontsize/1.75);
+xlabel('Number of measurements','Interpreter','latex','FontSize',fontsize)
+ylabel('log rms error','Interpreter','latex','FontSize',fontsize)
+title('Constrained Neural Network','Interpreter','latex','FontSize',fontsize)
 ylim([-4.1 0.5])
 
 subplot 122
 boxplot(log(rms_error_uc.'),u_n_data)
-xlabel('Number of measurements')
-ylabel('log rms error')
-title('Standard Neural Network')
+set(gca,'FontSize',fontsize/1.75);
+xlabel('Number of measurements','Interpreter','latex','FontSize',fontsize)
+ylabel('log rms error','Interpreter','latex','FontSize',fontsize)
+title('Standard Neural Network','Interpreter','latex','FontSize',fontsize)
 ylim([-4.1 0.5])
 
 figure(2)
