@@ -12,8 +12,8 @@ description = "Train 2D constrained and unconstrained model"
 parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument('--epochs', type=int, default=400,
                            help='maximum number of epochs (default: 300)')
-# parser.add_argument('--seed', type=int, default=10,
-#                            help='random seed for number generator (default: 10)')
+parser.add_argument('--seed', type=int, default=-1,
+                           help='random seed for number generator (default: -1 means not set)')
 parser.add_argument('--batch_size', type=int, default=100,
                            help='batch size (default: 100).')
 parser.add_argument('--net_hidden_size', type=int, nargs='+', default=[100,50],
@@ -24,6 +24,8 @@ parser.add_argument('--num_workers', type=int, default=2,
                         help='number of workers for data loader (default:4)')
 parser.add_argument('--show_plot', action='store_true',
                     help='Enable plotting (default:False)')
+parser.add_argument('--save_plot', action='store_true',
+                    help='Save plot (requires show_plot) (default:False)')
 parser.add_argument('--save_file', default='', help='save file name (default: wont save)')
 parser.add_argument('--pin_memory', action='store_true',
                     help='enables pin memory (default:False)')
@@ -37,8 +39,8 @@ parser.add_argument('--scheduler', type=int, default=0,
 
 args = parser.parse_args()
 
-
-# torch.manual_seed(args.seed)
+if args.seed >= 0:
+    torch.manual_seed(args.seed)
 
 n_data = args.n_data
 pin_memory = args.pin_memory
@@ -236,13 +238,61 @@ if args.save_file is not '':
 if args.show_plot:
     with torch.no_grad():
         # Initialize plot
-        f, ax = plt.subplots(1, 1, figsize=(4, 3))
-        ax.plot(np.log(train_loss))
-        ax.plot(np.log(val_loss))
-        ax.set_xlabel('epoch')
-        ax.set_ylabel('log loss')
-        ax.legend(['train','val'])
+        f, ax = plt.subplots(2, 2, figsize=(8, 6))
+        # ax.pcolor(xv,yv,f_scalar)
+        ax[0, 0].quiver(xv, yv, v1, v2)
+        ax[0, 0].quiver(xv, yv, v1_pred.reshape(20, 20).detach(), v2_pred.reshape(20, 20).detach(), color='r')
+        ax[0, 0].legend(['true', 'predicted'])
+        ax[0, 0].set_title('constrained NN ')
+
+        ax[1, 0].plot(np.log(train_loss))
+        ax[1, 0].plot(np.log(val_loss))
+        # ax[1].plot(loss_save[1:epoch].log().detach().numpy())
+        ax[1, 0].set_xlabel('training epoch')
+        ax[1, 0].set_ylabel('log mse val loss')
+        ax[1, 0].legend(['training loss', 'val loss'])
+
+        ax[0, 1].quiver(xv, yv, v1, v2)
+        ax[0, 1].quiver(xv, yv, v1_pred_uc.reshape(20, 20).detach(), v2_pred_uc.reshape(20, 20).detach(), color='r')
+        ax[0, 1].legend(['true', 'predicted'])
+        ax[0, 1].set_title('unconstrained NN ')
+
+        ax[1, 1].plot(np.log(train_loss_uc))
+        ax[1, 1].plot(np.log(val_loss_uc))
+        ax[1, 1].set_ylabel('log mse val loss')
+        ax[1, 1].set_xlabel('training epoch')
+        ax[1, 1].legend(['training loss','val loss'])
+
+        # Initialize second plot
+        f2, ax2 = plt.subplots(1, 3, figsize=(13, 4))
+        Q = ax2[0].quiver(xv, yv, v1, v2, scale=None, scale_units='inches')
+        Q._init()
+        assert isinstance(Q.scale, float)
+        ax2[0].quiver(x1_train, x2_train, y1_train, y2_train, scale=Q.scale, scale_units='inches', color='r')
+        ax2[0].set_xlabel('$x_1$')
+        ax2[0].set_ylabel('$x_2$')
+
+        error_new = torch.cat((v1.reshape(400, 1) - v1_pred.detach(), v2.reshape(400, 1) - v2_pred.detach()), 0)
+        rms_new = torch.sqrt(sum(error_new * error_new) / 800)
+
+        ax2[1].quiver(xv, yv, v1 - v1_pred.reshape(20, 20).detach(), v2 - v2_pred.reshape(20, 20).detach(),
+                      scale=Q.scale, scale_units='inches')
+        ax2[1].set_xlabel('$x_1$')
+        ax2[1].set_ylabel('$x_2$')
+        ax2[1].set_title('Our Approach RMS error ={0:.2f}'.format(rms_new.item()))
+
+        error_uc = torch.cat((v1.reshape(400) - v1_pred_uc.detach(), v2.reshape(400) - v2_pred_uc.detach()), 0)
+        rms_uc = torch.sqrt(sum(error_uc * error_uc) / 800)
+
+        ax2[2].quiver(xv, yv, v1 - v1_pred_uc.reshape(20, 20).detach(), v2 - v2_pred_uc.reshape(20, 20).detach(),
+                      scale=Q.scale, scale_units='inches')
+        ax2[2].set_xlabel('$x_1$')
+        ax2[2].set_ylabel('$x_2$')
+        ax2[2].set_title('Unconstrained NN RMS error ={0:.2f}'.format(rms_uc.item()))
         plt.show()
+        if args.save_plot:
+            f2.savefig('div_free_fields.eps', format='eps')
+
 
 
 
