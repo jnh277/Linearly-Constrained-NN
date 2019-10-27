@@ -30,6 +30,8 @@ parser.add_argument('--save_file', default='', help='save file name (default: wo
 #                     help='enables pin memory (default:False)')
 parser.add_argument('--scheduler', type=int, default=1,
                     help='0 selects interval reduction, 1 selects plateau (default:1)')
+parser.add_argument('--n_train', type=int, default=1000,
+                           help='number of data points to use for training (default: 1000).')
 
 args = parser.parse_args()
 
@@ -75,8 +77,11 @@ class Dataset(data.Dataset):
 
     return X, mag
 
-nv = math.floor(n*0.8)
-nt = n - nv
+# nv = math.floor(n*(1-args.train_split))
+# nt = n - nv
+nt = min(args.n_train,n)
+nv = n - nt
+
 
 training_set = Dataset(X[0:nt,:], y[0:nt,:])
 # data loader Parameters
@@ -230,8 +235,19 @@ X_pred = torch.cat((xv.reshape(10*10,1), yv.reshape(10*10,1), zv.reshape(10*10,1
 
 fpred_uc = model_uc(X_pred)
 
-# if args.show_plot:
-if True:
+
+# ----------------- save configuration options and results -------------------------------
+if args.save_file is not '':
+    data = vars(args)       # puts the config options into a dict
+    data['train_loss'] = train_loss
+    data['val_loss'] = val_loss
+    data['train_loss_uc'] = train_loss_uc
+    data['val_loss_uc'] = val_loss_uc
+    sio.savemat('./results/'+ args.save_file+'.mat', data)
+
+
+if args.show_plot:
+# if True:
     with torch.no_grad():
         # Initialize plot
         f, ax = plt.subplots(2, 2, figsize=(8, 6))
