@@ -36,7 +36,8 @@ parser.add_argument('--n_train', type=int, default=1000,
 args = parser.parse_args()
 
 
-mag_data=sio.loadmat('/Users/johannes/Documents/GitHub/Linearly-Constrained-NN/real_data/magnetic_field_data.mat')
+# mag_data=sio.loadmat('/Users/johannes/Documents/GitHub/Linearly-Constrained-NN/real_data/magnetic_field_data.mat')
+mag_data = sio.loadmat('./real_data/magnetic_field_data.mat')
 
 pos = mag_data['pos']
 mag = mag_data['mag']
