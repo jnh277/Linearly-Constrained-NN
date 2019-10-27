@@ -131,7 +131,7 @@ def train(epoch):
         loss = (criterion(y1_train, v1hat) + criterion(y2_train, v2hat)) / 2  # divide by 2 as it is a mean
         loss.backward()
         optimizer.step()
-        total_loss += loss.cpu()
+        total_loss += loss
         n_batches += 1
     return total_loss / n_batches
 
