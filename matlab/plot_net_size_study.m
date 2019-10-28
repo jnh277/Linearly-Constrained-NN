@@ -41,10 +41,12 @@ end
 %%
 fontsize = 20;
 
+% inds = 1:24;
+inds = [1:7, 9:2:19, 20 21 22 23];
 figure(1)
 set(gcf,'Position',[34         487        1080         438])
 subplot 121
-boxplot(log(rms_error.'),sum(u_net_size,1))
+boxplot(log(rms_error(inds,:).'),sum(u_net_size(:,inds),1))
 set(gca,'FontSize',fontsize/1.75);
 xlabel('Number of neurons','Interpreter','latex','FontSize',fontsize)
 ylabel('log rms error','Interpreter','latex','FontSize',fontsize)
@@ -52,7 +54,7 @@ title('Constrained Neural Network','Interpreter','latex','FontSize',fontsize)
 ylim([-4.1 0.5])
 
 subplot 122
-boxplot(log(rms_error_uc.'),sum(u_net_size,1))
+boxplot(log(rms_error_uc(inds,:).'),sum(u_net_size(:,inds),1))
 set(gca,'FontSize',fontsize/1.75);
 xlabel('Number of neurons','Interpreter','latex','FontSize',fontsize)
 ylabel('log rms error','Interpreter','latex','FontSize',fontsize)
