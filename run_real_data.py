@@ -24,7 +24,7 @@ perm = torch.randperm(n)
 pos = pos[perm, :]
 mag = mag[perm, :]
 
-# normalising inputs (would this effect the constraints)??? maybe
+# Don't normalise inputs as it would change the value of the derivatives and mess up constraint satisfaction
 min_x = pos[:, 0].min()
 min_y = pos[:, 1].min()
 min_z = pos[:, 2].min()
@@ -35,9 +35,6 @@ max_z = pos[:, 2].max()
 
 # X = pos.copy()
 X = torch.from_numpy(pos).float()
-# X[:, 0] = (X[:, 0]-min_x)/(max_x-min_x)*2.0 - 1.0
-# X[:, 1] = (X[:, 1]-min_y)/(max_y-min_y)*2.0 - 1.0
-# X[:, 2] = (X[:, 2]-min_z)/(max_z-min_z)*2.0 - 1.0
 
 min_mag1 = mag[:, 0].min()
 min_mag2 = mag[:, 1].min()
@@ -49,10 +46,6 @@ max_mag3 = mag[:, 2].max()
 
 y = torch.from_numpy(mag).float()
 
-# # see if output scaling helps (didnt help)
-# y[:, 0] = (y[:, 0] - min_mag1)/(max_mag1-min_mag1)*2.0 - 1.0
-# y[:, 1] = (y[:, 1] - min_mag2)/(max_mag2-min_mag2)*2.0 - 1.0
-# y[:, 2] = (y[:, 2] - min_mag3)/(max_mag3-min_mag3)*2.0 - 1.0
 
 
 
