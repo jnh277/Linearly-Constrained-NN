@@ -18,6 +18,6 @@ do
         # v=`expr $sc \* 5`
         z=`expr $sc \* 2`
         v=`expr $sc \* 1`
-        python experiment_2D.py --n_data 4000 --net_hidden_size ${z} ${v} --save_file net_size_study/exp_${z}_trial_${i} --epochs 400 --scheduler 1
+        python experiment_2D.py --n_data 4000 --net_hidden_size ${z} ${v} --save_file net_size_study2/exp_${z}_trial_${i} --epochs 400 --scheduler 1
     done
 done
