@@ -66,7 +66,7 @@ done
 
 for nt in 250 500 1000 1500 2000 2500 5000
 do
-    python mag_data_experiment.py --scheduler 1 --epochs 1000 --net_hidden_size 25 10 5 --batch_size 100 --save_file mag_data_tests/net25_smallbatch_ntrain_${nt} --n_train ${nt} 
+    python mag_data_experiment.py --scheduler 1 --epochs 1000 --net_hidden_size 25 10 5 --batch_size 100 --save_file mag_data_tests/net25_smallbatch_ntrain_${nt} --n_train ${nt}
 
 done
 
