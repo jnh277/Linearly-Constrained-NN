@@ -20,3 +20,15 @@ plot(log(constrained_val_loss))
 hold on
 plot(log(standard_val_loss))
 hold off
+
+
+n_train = [r(:).n_train];
+
+ind = find(n_train == 5000);
+
+figure(2)
+clf
+plot(ind,log(constrained_val_loss(ind)))
+hold on
+plot(ind,log(standard_val_loss(ind)))
+hold off

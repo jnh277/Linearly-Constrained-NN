@@ -117,7 +117,7 @@ if args.scheduler == 1:
                                                      factor=0.5,
                                                     cooldown=15)
 else:
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 40, gamma=0.5, last_epoch=-1)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 100, gamma=0.5, last_epoch=-1)
 # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 25, gamma=0.5, last_epoch=-1)
 
 def train(epoch):
@@ -172,7 +172,7 @@ if args.scheduler == 1:
                                                     factor=0.5,
                                                     cooldown=15)
 else:
-    scheduler_uc = torch.optim.lr_scheduler.StepLR(optimizer_uc, 40, gamma=0.5, last_epoch=-1)
+    scheduler_uc = torch.optim.lr_scheduler.StepLR(optimizer_uc, 100, gamma=0.5, last_epoch=-1)
 
 def train_uc(epoch):
     model_uc.train()

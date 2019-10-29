@@ -248,3 +248,67 @@ class DerivNet3D(torch.nn.Module):
 
         # print('size: ', dydx.size())
         return (y, dydx1, dydx2, dydx3)
+
+class DerivNet3D_2layer(torch.nn.Module):
+    def __init__(self, n_in, n_h1, n_h2, n_o):
+        super(DerivNet3D_2layer, self).__init__()
+        self.linear1 = torch.nn.Linear(n_in, n_h1)
+        self.tanh1 = torch.nn.Tanh()
+        self.linear2 = torch.nn.Linear(n_h1, n_h2)
+        self.tanh2 = torch.nn.Tanh()
+        # self.linear3 = torch.nn.Linear(n_h2, n_h3)
+        # self.tanh3 = torch.nn.Tanh()
+        self.linear4 = torch.nn.Linear(n_h2, n_o)
+        self.derivTanh1 = DerivTanh()
+        self.derivTanh2 = DerivTanh()
+        # self.derivTanh3 = DerivTanh()
+
+    def forward(self, x):
+        h1 = self.linear1(x)
+        z1 = self.tanh1(h1)
+        h2 = self.linear2(z1)
+        z2 = self.tanh2(h2)
+        # h3 = self.linear3(z2)
+        # z3 = self.tanh3(h3)
+        y = self.linear4(z2)
+
+        # differential model
+        (nx, dx) = x.size()  # nx is number of data points, dx is data dimension (must match n_in)
+        w1 = self.linear1.weight
+        w2 = self.linear2.weight
+        # w3 = self.linear3.weight
+        w4 = self.linear4.weight
+
+        # derivative of h1 with respect to x1 (x-drection)
+        dh1dx1 = w1[:,0].unsqueeze(1).repeat(1, nx)
+
+        # derivative of h1 with respect to x2 (y-direction)
+        dh1dx2 = w1[:,1].unsqueeze(1).repeat(1, nx)
+
+        # derivative of h1 with respect to x3 (z-direction)
+        dh1dx3 = w1[:, 2].unsqueeze(1).repeat(1, nx)
+
+        dh2dz1 = w2
+        # dh3dz2 = w3
+        dydz3 = w4
+
+        # print('size: ', dh2dz1.size())
+
+        dz1dh1 = self.derivTanh1(h1) # this shape means need to do some element wise multiplication
+        dz2dh2 = self.derivTanh2(h2)
+        # dz3dh3 = self.derivTanh2(h3)
+
+        # derivative of output with respect to x1
+        # dydx1 = (dydz2.mm(dz2dh2 * dh2dz1.mm(dz1dh1 * dh1dx1))).t()
+        dydx1 = (dydz3.mm(dz2dh2 * dh2dz1.mm(dz1dh1 * dh1dx1))).t()
+
+        # derivative of output with respect to x2
+        # dydx2 = (dydz2.mm(dz2dh2 * dh2dz1.mm(dz1dh1 * dh1dx2))).t()
+        dydx2 = (dydz3.mm(dz2dh2 * dh2dz1.mm(dz1dh1 * dh1dx2))).t()
+
+        # derivative of output with respect to x3
+        # dydx3 = (dydz2.mm(dz2dh2 * dh2dz1.mm(dz1dh1 * dh1dx3))).t()
+        dydx3 = (dydz3.mm(dz2dh2 * dh2dz1.mm(dz1dh1 * dh1dx3))).t()
+
+        # print('size: ', dydx.size())
+        return (y, dydx1, dydx2, dydx3)

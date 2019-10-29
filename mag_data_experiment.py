@@ -95,17 +95,25 @@ X_val = X[nt:n, :]
 mag_val = y[nt:n, :]
 
 ## define neural network model
+layers = len(args.net_hidden_size)
+
 n_in = 3
 n_h1 = args.net_hidden_size[0]
 n_h2 = args.net_hidden_size[1]
-n_h3 = args.net_hidden_size[2]
 n_o = 1
-
 n_o_uc = 3
+if layers > 2:
+    n_h3 = args.net_hidden_size[2]
+    model = models.DerivNet3D(n_in, n_h1, n_h2, n_h3, n_o)
+else:
+    model = models.DerivNet3D_2layer(n_in, n_h1, n_h2, n_o)
 
 
 
-model = models.DerivNet3D(n_in, n_h1, n_h2, n_h3, n_o)
+
+
+
+
 
 ## train
 criterion = torch.nn.MSELoss()
@@ -160,15 +168,24 @@ for epoch in range(args.epochs):
 
 
 # Train a standard NN
-model_uc = torch.nn.Sequential(
-    torch.nn.Linear(n_in, n_h1),
-    torch.nn.Tanh(),
-    torch.nn.Linear(n_h1, n_h2),
-    torch.nn.Tanh(),
-    torch.nn.Linear(n_h2, n_h3),
-    torch.nn.Tanh(),
-    torch.nn.Linear(n_h3, n_o_uc),
-)
+if layers == 3:
+    model_uc = torch.nn.Sequential(
+        torch.nn.Linear(n_in, n_h1),
+        torch.nn.Tanh(),
+        torch.nn.Linear(n_h1, n_h2),
+        torch.nn.Tanh(),
+        torch.nn.Linear(n_h2, n_h3),
+        torch.nn.Tanh(),
+        torch.nn.Linear(n_h3, n_o_uc),
+    )
+elif layers==2:
+    model_uc = torch.nn.Sequential(
+        torch.nn.Linear(n_in, n_h1),
+        torch.nn.Tanh(),
+        torch.nn.Linear(n_h1, n_h2),
+        torch.nn.Tanh(),
+        torch.nn.Linear(n_h2, n_o_uc),
+    )
 
 optimizer_uc = torch.optim.Adam(model_uc.parameters(), lr=0.01)
 if args.scheduler == 1:
