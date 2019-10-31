@@ -13,8 +13,8 @@ import argparse
 parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument('--epochs', type=int, default=300,
                            help='maximum number of epochs (default: 300)')
-parser.add_argument('--seed', type=int, default=4,
-                           help='random seed for number generator (default: 4)')
+parser.add_argument('--seed', type=int, default=-1,
+                           help='random seed for number generator (default: does not set seed)')
 parser.add_argument('--batch_size', type=int, default=500,
                            help='batch size (default: 500).')
 parser.add_argument('--net_hidden_size', type=int, nargs='+', default=[100,50,25],
@@ -35,6 +35,8 @@ parser.add_argument('--n_train', type=int, default=1000,
 
 args = parser.parse_args()
 
+if args.seed >= 0:
+    torch.manual_seed(args.seed)
 
 # mag_data=sio.loadmat('/Users/johannes/Documents/GitHub/Linearly-Constrained-NN/real_data/magnetic_field_data.mat')
 mag_data = sio.loadmat('./real_data/magnetic_field_data.mat')
@@ -47,8 +49,9 @@ mag_save = mag.copy()
 
 n = len(pos[:, 0])     # length of data, using all data
 
+
+
 # apply a random shuffling to the data
-torch.manual_seed(args.seed)
 perm = torch.randperm(n)
 pos = pos[perm, :]
 mag = mag[perm, :]
