@@ -43,7 +43,7 @@ set(gca,'FontSize',fontsize/1.75);
 xlabel('Number of measurements','Interpreter','latex','FontSize',fontsize)
 ylabel('log rms error','Interpreter','latex','FontSize',fontsize)
 title('Constrained Neural Network','Interpreter','latex','FontSize',fontsize)
-ylim([-4.1 0.5])
+ylim([-8 -5])
 
 subplot 122
 boxplot(log(final_val_loss_uc.'),u_n_data)
@@ -51,7 +51,7 @@ set(gca,'FontSize',fontsize/1.75);
 xlabel('Number of measurements','Interpreter','latex','FontSize',fontsize)
 ylabel('log rms error','Interpreter','latex','FontSize',fontsize)
 title('Standard Neural Network','Interpreter','latex','FontSize',fontsize)
-ylim([-4.1 0.5])
+ylim([-8 -5])
 
 figure(2)
 plot(u_n_data,log(mean(final_val_loss,2)))
@@ -59,10 +59,18 @@ hold on
 plot(u_n_data,log(mean(final_val_loss_uc,2)))
 hold off
 legend('Constrained NN','Standard NN')
-xlabel('Number of measurements')
-ylabel('log rms error')
+set(gca,'FontSize',fontsize/1.75);
+xlabel('Number of measurements','Interpreter','latex','FontSize',fontsize)
+ylabel('log rms error','Interpreter','latex','FontSize',fontsize)
 
 % plot([r(:).n_data])
+%%
 
+data = [final_val_loss.', final_val_loss_uc.'];
+cat1 = repmat(u_n_data,1,2);
+mod = [repmat({'M1'},1,length(u_n_data)),repmat({'M2'},1,length(u_n_data))];
+
+figure(3)
+boxplot(log(data),{cat1,mod},'factorgap',[5 0],'labelverbosity','minor','colors',repmat('rb',1,12));
 
 
