@@ -97,4 +97,20 @@ class DerivNet(torch.nn.Module):
             y = h[-1]
         else:
             y = z[-1]               # if final layer was activation function
-        return y
+
+        # now do derivatives
+        dzdh = []
+        for i in range(len(self.dfcn)):
+            dzdh.append(self.dfcn[i](h[i]))
+        dydx = []
+        for k in range(self.dim_x):
+            for i in range(math.ceil(self.num_layers/2)):
+                if i == 0:
+                    tmp = self.weights[0][:,k].unsqueeze(1).repeat(1, nx)
+                else:
+                    tmp = self.weights[i].mm(tmp)
+                if 2*i+1 < self.num_layers:
+                    tmp = dzdh[i] * tmp
+            dydx.append(tmp.t())
+
+        return y, dydx
