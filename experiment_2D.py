@@ -243,6 +243,9 @@ if args.save_file is not '':
     sio.savemat('./results/'+ args.save_file+'.mat', data)
 
 
+if args.display:
+    print('Finished')
+
 if args.show_plot:
     with torch.no_grad():
         # Initialize plot

@@ -17,4 +17,4 @@ nd=4000
 i=1
 
 
-python experiment_2D.py --n_data ${nd} --save_file hcp/exp_${nd}_trial_${i} --epochs 2000 --scheduler 1
+python experiment_2D.py --n_data ${nd} --save_file hcp/exp_${nd}_trial_${i} --epochs 2000 --scheduler 1 --display
