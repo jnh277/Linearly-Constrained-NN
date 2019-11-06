@@ -24,6 +24,8 @@ parser.add_argument('--num_workers', type=int, default=2,
                         help='number of workers for data loader (default:4)')
 parser.add_argument('--show_plot', action='store_true',
                     help='Enable plotting (default:False)')
+parser.add_argument('--display', action='store_true',
+                    help='Enable plotting (default:False)')
 parser.add_argument('--save_plot', action='store_true',
                     help='Save plot (requires show_plot) (default:False)')
 parser.add_argument('--save_file', default='', help='save file name (default: wont save)')
@@ -146,7 +148,9 @@ def eval(epoch):
 train_loss = np.empty([args.epochs, 1])
 val_loss = np.empty([args.epochs, 1])
 
-print('Training invariant NN')
+if args.display:
+    print('Training invariant NN')
+
 for epoch in range(args.epochs):
     train_loss[epoch] = train(epoch).detach().numpy()
     v_loss = eval(epoch)
@@ -155,7 +159,8 @@ for epoch in range(args.epochs):
     else:
         scheduler.step(epoch)   # input epoch for scheduled lr, val_loss for plateau
     val_loss[epoch] = v_loss.detach().numpy()
-    print(args.save_file, 'Invariant NN: epoch: ', epoch, 'training loss ', train_loss[epoch], 'validation loss', val_loss[epoch])
+    if args.display:
+        print(args.save_file, 'Invariant NN: epoch: ', epoch, 'training loss ', train_loss[epoch], 'validation loss', val_loss[epoch])
 
 
 # work out the rms error for this one
@@ -201,7 +206,9 @@ def eval_uc(epoch):
 train_loss_uc = np.empty([args.epochs, 1])
 val_loss_uc = np.empty([args.epochs, 1])
 
-print('Training standard NN')
+if args.display:
+    print('Training standard NN')
+
 for epoch in range(args.epochs):
     train_loss_uc[epoch] = train_uc(epoch).detach().numpy()
     v_loss = eval_uc(epoch)
@@ -210,7 +217,8 @@ for epoch in range(args.epochs):
     else:
         scheduler_uc.step(epoch)
     val_loss_uc[epoch] = v_loss.detach().numpy()
-    print(args.save_file, 'Standard NN: epoch: ', epoch, 'training loss ', train_loss_uc[epoch], 'validation loss', val_loss_uc[epoch])
+    if args.display:
+        print(args.save_file, 'Standard NN: epoch: ', epoch, 'training loss ', train_loss_uc[epoch], 'validation loss', val_loss_uc[epoch])
 
 # move model to cpu
 
