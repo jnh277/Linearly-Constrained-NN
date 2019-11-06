@@ -11,6 +11,6 @@ cd /home/jnh277/Linearly-Constrained-NN
 
 echo "Running with ND=$ND and I=$I"
 
-python experiment_2D.py --n_data ${ND} --save_file n_data_study/exp_${ND}_trial_${I} --epochs 400 --scheduler 1 --display
+python experiment_2D.py --n_data ${ND} --save_file hcp/exp_${ND}_trial_${I} --epochs 400 --scheduler 1 --display
 
 
