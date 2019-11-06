@@ -1,6 +1,7 @@
 import torch
 from matplotlib import pyplot as plt
 from torch.utils import data
+import derivnets
 import models
 import argparse
 import numpy as np
@@ -23,8 +24,6 @@ parser.add_argument('--n_data', type=int, default=3000,
 parser.add_argument('--num_workers', type=int, default=2,
                         help='number of workers for data loader (default:4)')
 parser.add_argument('--show_plot', action='store_true',
-                    help='Enable plotting (default:False)')
-parser.add_argument('--display', action='store_true',
                     help='Enable plotting (default:False)')
 parser.add_argument('--save_plot', action='store_true',
                     help='Save plot (requires show_plot) (default:False)')
@@ -63,16 +62,36 @@ n_o = 1
 # two outputs for the unconstrained network
 n_o_uc = 2
 
-model = models.DerivNet2D(n_in, n_h1, n_h2, n_o)
+# model = models.DerivNet2D(n_in, n_h1, n_h2, n_o)
+# model = derivnets.DerivNet(torch.nn.Linear(n_in, n_h1),
+#                            torch.nn.Tanh(),
+#                            torch.nn.Linear(n_h1, n_h2),
+#                            torch.nn.Tanh(),
+#                            torch.nn.Linear(n_h2, n_o))
 
+model = derivnets.DerivNet(torch.nn.Linear(n_in, 10),
+                           torch.nn.Tanh(),
+                           torch.nn.Linear(10, 15),
+                           torch.nn.Tanh(),
+                           torch.nn.Linear(15, 10),
+                           torch.nn.Tanh(),
+                           torch.nn.Linear(10,1))
 
-model_uc = torch.nn.Sequential(
-    torch.nn.Linear(n_in, n_h1),
-    torch.nn.Tanh(),
-    torch.nn.Linear(n_h1, n_h2),
-    torch.nn.Tanh(),
-    torch.nn.Linear(n_h2, n_o_uc),
-)
+# model_uc = torch.nn.Sequential(
+#     torch.nn.Linear(n_in, n_h1),
+#     torch.nn.Tanh(),
+#     torch.nn.Linear(n_h1, n_h2),
+#     torch.nn.Tanh(),
+#     torch.nn.Linear(n_h2, n_o_uc),
+# )
+
+model_uc = torch.nn.Sequential(torch.nn.Linear(n_in, 10),
+                           torch.nn.Tanh(),
+                           torch.nn.Linear(10, 15),
+                           torch.nn.Tanh(),
+                           torch.nn.Linear(15, 10),
+                           torch.nn.Tanh(),
+                           torch.nn.Linear(10,2))
 
 
 # pregenerate validation data
@@ -129,7 +148,9 @@ def train(epoch):
     for x1_train, x2_train, y1_train, y2_train in training_generator:
         optimizer.zero_grad()
         x_train = torch.cat((x1_train, x2_train), 1)
-        (yhat, v1hat, v2hat) = model(x_train)
+        (yhat, dydx) = model(x_train)
+        v1hat = dydx[1]
+        v2hat = -dydx[0]
         loss = (criterion(y1_train, v1hat) + criterion(y2_train, v2hat)) / 2  # divide by 2 as it is a mean
         loss.backward()
         optimizer.step()
@@ -140,7 +161,9 @@ def train(epoch):
 def eval(epoch):
     model.eval()
     with torch.no_grad():
-        (yhat, v1hat, v2hat) = model(x_val)
+        (yhat, dydx) = model(x_val)
+        v1hat = dydx[1]
+        v2hat = -dydx[0]
         loss = (criterion(y1_val, v1hat) + criterion(y2_val, v2hat)) / 2
     return loss.cpu()
 
@@ -148,9 +171,7 @@ def eval(epoch):
 train_loss = np.empty([args.epochs, 1])
 val_loss = np.empty([args.epochs, 1])
 
-if args.display:
-    print('Training invariant NN')
-
+print('Training invariant NN')
 for epoch in range(args.epochs):
     train_loss[epoch] = train(epoch).detach().numpy()
     v_loss = eval(epoch)
@@ -159,13 +180,14 @@ for epoch in range(args.epochs):
     else:
         scheduler.step(epoch)   # input epoch for scheduled lr, val_loss for plateau
     val_loss[epoch] = v_loss.detach().numpy()
-    if args.display:
-        print(args.save_file, 'Invariant NN: epoch: ', epoch, 'training loss ', train_loss[epoch], 'validation loss', val_loss[epoch])
+    print(args.save_file, 'Invariant NN: epoch: ', epoch, 'training loss ', train_loss[epoch], 'validation loss', val_loss[epoch])
 
 
 # work out the rms error for this one
 x_pred = torch.cat((xv.reshape(20 * 20, 1), yv.reshape(20 * 20, 1)), 1)
-(f_pred, v1_pred, v2_pred) = model(x_pred)
+(f_pred, dydx) = model(x_pred)
+v1_pred = dydx[1]
+v2_pred = -dydx[0]
 error_new = torch.cat((v1.reshape(400, 1) - v1_pred.detach(), v2.reshape(400, 1) - v2_pred.detach()), 0)
 rms_error = torch.sqrt(sum(error_new * error_new) / 800)
 
@@ -206,9 +228,7 @@ def eval_uc(epoch):
 train_loss_uc = np.empty([args.epochs, 1])
 val_loss_uc = np.empty([args.epochs, 1])
 
-if args.display:
-    print('Training standard NN')
-
+print('Training standard NN')
 for epoch in range(args.epochs):
     train_loss_uc[epoch] = train_uc(epoch).detach().numpy()
     v_loss = eval_uc(epoch)
@@ -217,8 +237,7 @@ for epoch in range(args.epochs):
     else:
         scheduler_uc.step(epoch)
     val_loss_uc[epoch] = v_loss.detach().numpy()
-    if args.display:
-        print(args.save_file, 'Standard NN: epoch: ', epoch, 'training loss ', train_loss_uc[epoch], 'validation loss', val_loss_uc[epoch])
+    print(args.save_file, 'Standard NN: epoch: ', epoch, 'training loss ', train_loss_uc[epoch], 'validation loss', val_loss_uc[epoch])
 
 # move model to cpu
 
@@ -242,9 +261,6 @@ if args.save_file is not '':
     data['final_rms_error_uc'] = rms_uc.detach().numpy()
     sio.savemat('./results/'+ args.save_file+'.mat', data)
 
-
-if args.display:
-    print('Finished')
 
 if args.show_plot:
     with torch.no_grad():

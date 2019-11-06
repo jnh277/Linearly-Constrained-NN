@@ -6,11 +6,11 @@ import argparse
 import numpy as np
 import scipy.io as sio
 
-description = "Train 2D constrained and unconstrained model"
+description = "Train 2D affine constrained and unconstrained model"
 
 # Arguments that will be saved in config file
 parser = argparse.ArgumentParser(add_help=False)
-parser.add_argument('--epochs', type=int, default=400,
+parser.add_argument('--epochs', type=int, default=300,
                            help='maximum number of epochs (default: 300)')
 parser.add_argument('--seed', type=int, default=-1,
                            help='random seed for number generator (default: -1 means not set)')
@@ -39,7 +39,12 @@ parser.add_argument('--scheduler', type=int, default=0,
 # parser.add_argument('--seed', type=int, default=10,
 #                            help='random seed for number generator (default: 10)')
 
+
 args = parser.parse_args()
+args.display = True
+args.show_plot = True
+args.epochs = 500
+args.n_data = 1000
 
 if args.seed >= 0:
     torch.manual_seed(args.seed)
@@ -47,10 +52,14 @@ if args.seed >= 0:
 n_data = args.n_data
 pin_memory = args.pin_memory
 
+
+# this is an affine version of the vector field, in this case we are after constant divergence nabla times v = b
 def vector_field(x, y, a=0.01):
-    v1 = torch.exp(-a*x*y)*(a*x*torch.sin(x*y) - x*torch.cos(x*y))
-    v2 = torch.exp(-a*x*y)*(y*torch.cos(x*y) - a*y*torch.sin(x*y))
+    v1 = torch.exp(-a*x*y)*(a*x*torch.sin(x*y) - x*torch.cos(x*y)) + 1.1*x
+    v2 = torch.exp(-a*x*y)*(y*torch.cos(x*y) - a*y*torch.sin(x*y)) + -0.3*y
     return (v1, v2)
+
+
 
 
 ## ------------------ set up models-------------------------- ##
@@ -63,7 +72,9 @@ n_o = 1
 # two outputs for the unconstrained network
 n_o_uc = 2
 
-model = models.DerivNet2D(n_in, n_h1, n_h2, n_o)
+model = models.AffineNet2D(n_in, n_h1, n_h2, n_o)
+
+# c0 = model.c*1.0
 
 
 model_uc = torch.nn.Sequential(
@@ -149,7 +160,7 @@ train_loss = np.empty([args.epochs, 1])
 val_loss = np.empty([args.epochs, 1])
 
 if args.display:
-    print('Training invariant NN')
+    print('Training Constrained NN')
 
 for epoch in range(args.epochs):
     train_loss[epoch] = train(epoch).detach().numpy()
@@ -160,7 +171,7 @@ for epoch in range(args.epochs):
         scheduler.step(epoch)   # input epoch for scheduled lr, val_loss for plateau
     val_loss[epoch] = v_loss.detach().numpy()
     if args.display:
-        print(args.save_file, 'Invariant NN: epoch: ', epoch, 'training loss ', train_loss[epoch], 'validation loss', val_loss[epoch])
+        print(args.save_file, 'Constrained NN: epoch: ', epoch, 'training loss ', train_loss[epoch], 'validation loss', val_loss[epoch])
 
 
 # work out the rms error for this one

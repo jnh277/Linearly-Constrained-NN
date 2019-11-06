@@ -7,7 +7,7 @@ from scipy.interpolate import griddata
 from matplotlib import pyplot as plt
 import models
 import argparse
-# from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d import Axes3D
 
 
 parser = argparse.ArgumentParser(add_help=False)
@@ -15,10 +15,10 @@ parser.add_argument('--epochs', type=int, default=300,
                            help='maximum number of epochs (default: 300)')
 parser.add_argument('--seed', type=int, default=-1,
                            help='random seed for number generator (default: does not set seed)')
-parser.add_argument('--batch_size', type=int, default=500,
-                           help='batch size (default: 500).')
-parser.add_argument('--net_hidden_size', type=int, nargs='+', default=[100,50,25],
-                           help='two hidden layer sizes (default: [100,50,25]).',)
+parser.add_argument('--batch_size', type=int, default=250,
+                           help='batch size (default: 250).')
+parser.add_argument('--net_hidden_size', type=int, nargs='+', default=[150, 75],
+                           help='two hidden layer sizes (default: [150, 75]).',)
 parser.add_argument('--num_workers', type=int, default=4,
                         help='number of workers for data loader (default:4)')
 parser.add_argument('--show_plot', action='store_true',
@@ -34,6 +34,9 @@ parser.add_argument('--n_train', type=int, default=1000,
                            help='number of data points to use for training (default: 1000).')
 
 args = parser.parse_args()
+args.show_plot = 500
+args.n_train = 500
+args.epochs = 600
 
 if args.seed >= 0:
     torch.manual_seed(args.seed)
@@ -257,6 +260,8 @@ X_pred = torch.cat((xv.reshape(10*10,1), yv.reshape(10*10,1), zv.reshape(10*10,1
 fpred_uc = model_uc(X_pred)
 
 
+
+
 # ----------------- save configuration options and results -------------------------------
 if args.save_file is not '':
     data = vars(args)       # puts the config options into a dict
@@ -295,6 +300,11 @@ if args.show_plot:
         ax[1, 1].set_xlabel('epochs')
         ax[1, 1].legend(['training','validation'])
 
+        (p_pred, m1pred, m2pred, m3pred) = model(X_pred)
+        fig = plt.figure()
+        ax2 = fig.gca(projection='3d')
+        ax2.quiver(X[:,0].numpy(),X[:,1].numpy(),X[:,2].numpy(),m1pred.detach().numpy(),m2pred.detach().numpy(),
+                   m3pred.detach().numpy(), normalize=True)
         # f2, ax2 = plt.subplots(1, 1, figsize=(4, 3))
         # ax2.quiver(X_val[])
         # fig2 = plt.figure()
