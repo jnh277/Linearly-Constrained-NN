@@ -1,6 +1,6 @@
 % script for loading and plotting the resutls of n_data study
 
-files = dir('../results/mag_data_tests3/*.mat');
+files = dir('../results/mag_data_n_study/*.mat');
 
 for i = 1:length(files)
     r(i) = load(strcat(files(i).folder,'/',files(i).name));
@@ -11,8 +11,8 @@ n_data = [r(:).n_train];
 [n_data,I] = sort(n_data);
 r = r(I);
 
-val_loss_trials(:) = [r.val_loss];
-val_loss_uc_trials(:) = [r.val_loss_uc];
+val_loss_trials = [r.val_loss];
+val_loss_uc_trials = [r.val_loss_uc];
 
 %% get unique n_data numbers
 [u_n_data, IA, IC] = unique(n_data);
