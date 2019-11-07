@@ -44,11 +44,16 @@ if args.seed >= 0:
 # mag_data=sio.loadmat('/Users/johannes/Documents/GitHub/Linearly-Constrained-NN/real_data/magnetic_field_data.mat')
 mag_data = sio.loadmat('./real_data/magnetic_field_data.mat')
 
+
+
+
 pos = mag_data['pos']
 mag = mag_data['mag']
 
 pos_save = pos.copy()
 mag_save = mag.copy()
+
+
 
 n = len(pos[:, 0])     # length of data, using all data
 
@@ -259,8 +264,12 @@ X_pred = torch.cat((xv.reshape(10*10,1), yv.reshape(10*10,1), zv.reshape(10*10,1
 
 fpred_uc = model_uc(X_pred)
 
-
-
+with torch.no_grad():
+    X_ordered = torch.from_numpy(pos_save).float()
+    (p_pred, m1pred, m2pred, m3pred) = model(X)
+    fpred_uc = model_uc(X)
+    (p_pred_o, m1pred_o, m2pred_o, m3pred_o) = model(X_ordered)
+    fpred_uc_o = model_uc(X_ordered)
 
 # ----------------- save configuration options and results -------------------------------
 if args.save_file is not '':
@@ -269,11 +278,21 @@ if args.save_file is not '':
     data['val_loss'] = val_loss
     data['train_loss_uc'] = train_loss_uc
     data['val_loss_uc'] = val_loss_uc
+    data['p_pred'] = p_pred.numpy()
+    data['m1pred'] = m1pred.numpy()
+    data['m2pred'] = m2pred.numpy()
+    data['m3pred'] = m3pred.numpy()
+    data['mpreduc'] = fpred_uc.numpy()
+    data['m1pred_o'] = m1pred_o.numpy()
+    data['m2pred_o'] = m2pred_o.numpy()
+    data['m3pred_o'] = m3pred_o.numpy()
+    data['mpreduc_o'] = fpred_uc_o.numpy()
+    data['mag_true'] = mag
+    data['pos'] = pos
     sio.savemat('./results/'+ args.save_file+'.mat', data)
 
 
 if args.show_plot:
-# if True:
     with torch.no_grad():
         # Initialize plot
         f, ax = plt.subplots(2, 2, figsize=(8, 6))
@@ -300,11 +319,11 @@ if args.show_plot:
         ax[1, 1].set_xlabel('epochs')
         ax[1, 1].legend(['training','validation'])
 
-        (p_pred, m1pred, m2pred, m3pred) = model(X_pred)
-        fig = plt.figure()
-        ax2 = fig.gca(projection='3d')
-        ax2.quiver(X[:,0].numpy(),X[:,1].numpy(),X[:,2].numpy(),m1pred.detach().numpy(),m2pred.detach().numpy(),
-                   m3pred.detach().numpy(), normalize=True)
+
+        # fig = plt.figure()
+        # ax2 = fig.gca(projection='3d')
+        # ax2.quiver(X_pred[1:-1:100,0].numpy(),X_pred[1:-1:100,1].numpy(),X[1:-1:100,2].numpy(),m1pred.detach().numpy(),m2pred.detach().numpy(),
+        #            m3pred.detach().numpy(), normalize=True)
         # f2, ax2 = plt.subplots(1, 1, figsize=(4, 3))
         # ax2.quiver(X_val[])
         # fig2 = plt.figure()

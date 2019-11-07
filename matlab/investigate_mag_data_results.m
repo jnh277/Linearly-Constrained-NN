@@ -32,3 +32,4 @@ plot(ind,log(constrained_val_loss(ind)))
 hold on
 plot(ind,log(standard_val_loss(ind)))
 hold off
+
