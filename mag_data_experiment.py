@@ -34,9 +34,9 @@ parser.add_argument('--n_train', type=int, default=1000,
                            help='number of data points to use for training (default: 1000).')
 
 args = parser.parse_args()
-args.show_plot = 500
-args.n_train = 500
-args.epochs = 600
+# args.show_plot = True
+# args.n_train = 500
+# args.epochs = 600
 
 if args.seed >= 0:
     torch.manual_seed(args.seed)
