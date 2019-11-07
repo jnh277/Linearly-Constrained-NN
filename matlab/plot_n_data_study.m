@@ -46,6 +46,7 @@ xlabel('Number of measurements','Interpreter','latex','FontSize',fontsize)
 ylabel('log rms error','Interpreter','latex','FontSize',fontsize)
 title('Constrained Neural Network','Interpreter','latex','FontSize',fontsize)
 ylim([-4.1 0.5])
+grid on
 
 subplot 122
 boxplot(log(rms_error_uc.'),u_n_data)
@@ -54,6 +55,7 @@ xlabel('Number of measurements','Interpreter','latex','FontSize',fontsize)
 ylabel('log rms error','Interpreter','latex','FontSize',fontsize)
 title('Standard Neural Network','Interpreter','latex','FontSize',fontsize)
 ylim([-4.1 0.5])
+grid on
 
 figure(2)
 plot(u_n_data,log(mean(rms_error,2)))
