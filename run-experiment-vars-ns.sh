@@ -7,6 +7,8 @@
 source /etc/profile.d/modules.sh
 module load torch/1.0.1-python3.6
 
+echo "here"
+
 cd /home/jnh277/Linearly-Constrained-NN
 
 echo "Running with Z=$Z and V=$V and I=$I"
