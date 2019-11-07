@@ -3,6 +3,13 @@ clear all
 clc
 
 files = dir('../results/mag_data_n_study/*.mat');
+% files = dir('../results/mag_data_n_study/exp_8000*.mat');
+% for i = 1:length(files)
+%     r = load(strcat(files(i).folder,'/',files(i).name));
+%     nums = sscanf(files(i).name, 'exp_%d_trial_%d.mat');
+%     trials(i) = nums(2);
+% end
+
 
 for i = 1:length(files)
     r(i) = load(strcat(files(i).folder,'/',files(i).name));
