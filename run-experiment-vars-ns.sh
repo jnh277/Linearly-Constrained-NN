@@ -11,5 +11,5 @@ cd /home/jnh277/Linearly-Constrained-NN
 
 echo "Running with Z=$Z and V=$V and I=$I"
 
-python mag_data_experiment.py --scheduler 1 --batch_size 250 --epochs 500 --n_train ${ND} --save_file mag_data_n_study/exp_${ND}_trial_${I} --net_hidden_size ${Z} ${V}
+python mag_data_experiment.py --scheduler 1 --batch_size 250 --epochs 500 --n_train ${ND} --save_file mag_data_netsize/exp_${ND}_trial_${I} --net_hidden_size ${Z} ${V}
 

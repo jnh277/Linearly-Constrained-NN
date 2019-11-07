@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # make executable with the following
-# chmod u+x run_experiment_hcp_multi.sh
-# run using ./run_experiment_hcp_multi.sh
+# chmod u+x run_exp_hcp_netsize.sh
+# run using ./run_exp_hcp_netsize.sh
 
 
 for sc in 3 6 9 12 15 18 21
