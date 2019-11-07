@@ -1,4 +1,6 @@
 % script for loading and plotting the resutls of n_data study
+clear all
+clc
 
 files = dir('../results/n_data_study/*.mat');
 

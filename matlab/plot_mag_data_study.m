@@ -1,4 +1,6 @@
 % script for loading and plotting the resutls of n_data study
+clear all
+clc
 
 files = dir('../results/mag_data_n_study/*.mat');
 
@@ -41,7 +43,7 @@ subplot 121
 boxplot(log(final_val_loss.'),u_n_data)
 set(gca,'FontSize',fontsize/1.75);
 xlabel('Number of measurements','Interpreter','latex','FontSize',fontsize)
-ylabel('log rms error','Interpreter','latex','FontSize',fontsize)
+ylabel('log rms validation loss','Interpreter','latex','FontSize',fontsize)
 title('Constrained Neural Network','Interpreter','latex','FontSize',fontsize)
 ylim([-8 -5])
 grid on
@@ -50,7 +52,7 @@ subplot 122
 boxplot(log(final_val_loss_uc.'),u_n_data)
 set(gca,'FontSize',fontsize/1.75);
 xlabel('Number of measurements','Interpreter','latex','FontSize',fontsize)
-ylabel('log rms error','Interpreter','latex','FontSize',fontsize)
+ylabel('log rms validation loss','Interpreter','latex','FontSize',fontsize)
 title('Standard Neural Network','Interpreter','latex','FontSize',fontsize)
 ylim([-8 -5])
 grid on
@@ -63,16 +65,22 @@ hold off
 legend('Constrained NN','Standard NN')
 set(gca,'FontSize',fontsize/1.75);
 xlabel('Number of measurements','Interpreter','latex','FontSize',fontsize)
-ylabel('log rms error','Interpreter','latex','FontSize',fontsize)
+ylabel('log rms validation loss','Interpreter','latex','FontSize',fontsize)
+
+mean(final_val_loss.',1)
+std(final_val_loss.')
+
+mean(final_val_loss_uc.',1)
+std(final_val_loss_uc.')
 
 % plot([r(:).n_data])
 %%
 
-data = [final_val_loss.', final_val_loss_uc.'];
-cat1 = repmat(u_n_data,1,2);
-mod = [repmat({'M1'},1,length(u_n_data)),repmat({'M2'},1,length(u_n_data))];
-
-figure(3)
-boxplot(log(data),{cat1,mod},'factorgap',[5 0],'labelverbosity','minor','colors',repmat('rb',1,12));
+% data = [final_val_loss.', final_val_loss_uc.'];
+% cat1 = repmat(u_n_data,1,2);
+% mod = [repmat({'M1'},1,length(u_n_data)),repmat({'M2'},1,length(u_n_data))];
+% 
+% figure(3)
+% boxplot(log(data),{cat1,mod},'factorgap',[5 0],'labelverbosity','minor','colors',repmat('rb',1,12));
 
 
