@@ -57,6 +57,7 @@ class DerivNet2D(torch.nn.Module):
         w2 = self.linear2.weight
         w3 = self.linear3.weight
 
+
         # derivative of h1 with respect to x1 (x-drection)
         dh1dx1 = w1[:,0].unsqueeze(1).repeat(1, nx)
 
