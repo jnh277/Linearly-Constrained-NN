@@ -41,7 +41,7 @@ parser.add_argument('--scheduler', type=int, default=0,
 
 args = parser.parse_args()
 args.display = True
-args.show_plot = True
+args.show_plot = False
 
 if args.seed >= 0:
     torch.manual_seed(args.seed)
@@ -88,13 +88,28 @@ y2_val = v2 + 0.1 * torch.randn(x1_val.size())
 y_val = torch.cat((y1_val, y2_val), 1)
 
 
-n_pred = 100
+n_pred = 250
 # Get the true function values on a grid
 xv, yv = torch.meshgrid([torch.arange(0.0, n_pred) * 4.0 / n_pred, torch.arange(0.0, n_pred) * 4.0 / n_pred])
 (v1, v2) = vector_field(xv, yv)
 
+xv2, yv2 = torch.meshgrid([torch.arange(0.0, 20) * 4.0 / 20, torch.arange(0.0, 20) * 4.0 / 20])
+(v1_2, v2_2) = vector_field(xv2, yv2)
+
 # generate training data
-x_train = 4.0 * torch.rand(n_data, 2)
+x_train = torch.empty(n_data, 2)
+x_train[0:int(n_data/4), 0] = 1.0 * torch.rand(int(n_data/4))
+x_train[0:int(n_data/4), 1] = 4.0 * torch.rand(int(n_data/4))
+
+x_train[int(n_data/4):2*int(n_data/4), 0] = 3+1.0 * torch.rand(int(n_data/4))
+x_train[int(n_data/4):2*int(n_data/4), 1] = 4.0 * torch.rand(int(n_data/4))
+
+x_train[2*int(n_data/4):3*int(n_data/4), 1] = 1.0 * torch.rand(int(n_data/4))
+x_train[2*int(n_data/4):3*int(n_data/4), 0] = 4.0 * torch.rand(int(n_data/4))
+
+x_train[3*int(n_data/4):4*int(n_data/4), 1] = 3+1.0 * torch.rand(int(n_data/4))
+x_train[3*int(n_data/4):4*int(n_data/4), 0] = 4.0 * torch.rand(int(n_data/4))
+
 x1_train = x_train[:, 0].unsqueeze(1)
 x2_train = x_train[:, 1].unsqueeze(1)
 
@@ -234,16 +249,6 @@ error_uc = torch.cat((v1.reshape(n_pred*n_pred) - v1_pred_uc.detach(), v2.reshap
 rms_uc = torch.sqrt(sum(error_uc * error_uc) / (2*n_pred*n_pred))
 
 # ----------------- save configuration options and results -------------------------------
-if args.save_file is not '':
-    data = vars(args)       # puts the config options into a dict
-    data['train_loss'] = train_loss
-    data['val_loss'] = val_loss
-    data['train_loss_uc'] = train_loss_uc
-    data['val_loss_uc'] = val_loss_uc
-    data['final_rms_error'] = rms_error.detach().numpy()        # these are tensors so have to convert to numpy
-    data['final_rms_error_uc'] = rms_uc.detach().numpy()
-    sio.savemat('./results/'+ args.save_file+'.mat', data)
-
 
 
 ## determine constraint violations
@@ -254,93 +259,60 @@ with torch.no_grad():
 
     dx = 4.0/n_pred
     dy = 4.0/n_pred
-    dfdx = torch.empty(n_pred,n_pred)
-    dfdx[:,0] = (v1_pred_mat[:,1] - v1_pred_mat[:,0])/dx
-    dfdx[:,-1] = (v1_pred_mat[:,-1] - v1_pred_mat[:,-2])/dx
-    dfdx[:,1:-2] = (v1_pred_mat[:,1:-2] - v1_pred_mat[:,0:-3])/dx/2 + (v1_pred_mat[:,2:-1] - v1_pred_mat[:,1:-2])/dx/2
-
     dfdy = torch.empty(n_pred,n_pred)
-    dfdy[0,:] = (v2_pred_mat[1,:] - v2_pred_mat[0,:])/dy
-    dfdy[-1,:] = (v2_pred_mat[-1,:] - v2_pred_mat[-2,:])/dy
-    dfdy[1:-2,:] = (v1_pred_mat[1:-2,:] - v2_pred_mat[0:-3,:])/dy/2 + (v2_pred_mat[2:-1,:] - v2_pred_mat[1:-2, :])/dy/2
+    dfdy[:,0] = (v2_pred_mat[:,1] - v2_pred_mat[:,0])/dy
+    dfdy[:,-1] = (v2_pred_mat[:,-1] - v2_pred_mat[:,-2])/dy
+    dfdy[:,1:-1] = (v2_pred_mat[:,1:-1] - v2_pred_mat[:,0:-2])/dy/2 + (v2_pred_mat[:,2:] - v2_pred_mat[:,1:-1])/dy/2
+
+    dfdx = torch.empty(n_pred,n_pred)
+    dfdx[0,:] = (v1_pred_mat[1,:] - v1_pred_mat[0,:])/dx
+    dfdx[-1,:] = (v1_pred_mat[-1,:] - v1_pred_mat[-2,:])/dx
+    dfdx[1:-1,:] = (v1_pred_mat[1:-1,:] - v1_pred_mat[0:-2,:])/dx/2 + (v1_pred_mat[2:,:] - v1_pred_mat[1:-1, :])/dx/2
 
     Cviol = dfdx + dfdy
 
-    Cviol.max()
+    print(Cviol.max())
 
-if args.display:
-    print('Finished')
+    v1_pred_mat = v1_pred_uc.reshape(n_pred,n_pred)
+    v2_pred_mat = v2_pred_uc.reshape(n_pred,n_pred)
+    dfdy = torch.empty(n_pred,n_pred)
+    dfdy[:,0] = (v2_pred_mat[:,1] - v2_pred_mat[:,0])/dy
+    dfdy[:,-1] = (v2_pred_mat[:,-1] - v2_pred_mat[:,-2])/dy
+    dfdy[:,1:-1] = (v2_pred_mat[:,1:-1] - v2_pred_mat[:,0:-2])/dy/2 + (v2_pred_mat[:,2:] - v2_pred_mat[:,1:-1])/dy/2
 
-if args.show_plot:
-    with torch.no_grad():
-        # Initialize plot
-        f, ax = plt.subplots(2, 2, figsize=(8, 6))
-        # ax.pcolor(xv,yv,f_scalar)
-        ax[0, 0].quiver(xv, yv, v1, v2)
-        ax[0, 0].quiver(xv, yv, v1_pred.reshape(n_pred, n_pred).detach(), v2_pred.reshape(n_pred, n_pred).detach(), color='r')
-        ax[0, 0].legend(['true', 'predicted'])
-        ax[0, 0].set_title('constrained NN ')
+    dfdx = torch.empty(n_pred,n_pred)
+    dfdx[0,:] = (v1_pred_mat[1,:] - v1_pred_mat[0,:])/dx
+    dfdx[-1,:] = (v1_pred_mat[-1,:] - v1_pred_mat[-2,:])/dx
+    dfdx[1:-1,:] = (v1_pred_mat[1:-1,:] - v1_pred_mat[0:-2,:])/dx/2 + (v1_pred_mat[2:,:] - v1_pred_mat[1:-1, :])/dx/2
 
-        ax[1, 0].plot(np.log(train_loss))
-        ax[1, 0].plot(np.log(val_loss))
-        # ax[1].plot(loss_save[1:epoch].log().detach().numpy())
-        ax[1, 0].set_xlabel('training epoch')
-        ax[1, 0].set_ylabel('log mse val loss')
-        ax[1, 0].legend(['training loss', 'val loss'])
+    Cviol_uc = dfdx + dfdy
 
-        ax[0, 1].quiver(xv, yv, v1, v2)
-        ax[0, 1].quiver(xv, yv, v1_pred_uc.reshape(n_pred, n_pred).detach(), v2_pred_uc.reshape(n_pred, n_pred).detach(), color='r')
-        ax[0, 1].legend(['true', 'predicted'])
-        ax[0, 1].set_title('unconstrained NN ')
-
-        ax[1, 1].plot(np.log(train_loss_uc))
-        ax[1, 1].plot(np.log(val_loss_uc))
-        ax[1, 1].set_ylabel('log mse val loss')
-        ax[1, 1].set_xlabel('training epoch')
-        ax[1, 1].legend(['training loss','val loss'])
-
-        # Initialize second plot
-        f2, ax2 = plt.subplots(1, 3, figsize=(13, 4))
-        Q = ax2[0].quiver(xv, yv, v1, v2, scale=None, scale_units='inches')
-        Q._init()
-        assert isinstance(Q.scale, float)
-        ax2[0].quiver(x1_train, x2_train, y1_train, y2_train, scale=Q.scale, scale_units='inches', color='r')
-        ax2[0].set_xlabel('$x_1$')
-        ax2[0].set_ylabel('$x_2$')
-
-        error_new = torch.cat((v1.reshape(n_pred*n_pred, 1) - v1_pred.detach(), v2.reshape(n_pred*n_pred, 1) - v2_pred.detach()), 0)
-        rms_new = torch.sqrt(sum(error_new * error_new) / (2*n_pred*n_pred))
-
-        ax2[1].quiver(xv, yv, v1 - v1_pred.reshape(n_pred, n_pred).detach(), v2 - v2_pred.reshape(n_pred, n_pred).detach(),
-                      scale=Q.scale, scale_units='inches')
-        ax2[1].set_xlabel('$x_1$')
-        ax2[1].set_ylabel('$x_2$')
-        ax2[1].set_title('Our Approach RMS error ={0:.2f}'.format(rms_new.item()))
-
-        error_uc = torch.cat((v1.reshape(n_pred*n_pred) - v1_pred_uc.detach(), v2.reshape(n_pred*n_pred) - v2_pred_uc.detach()), 0)
-        rms_uc = torch.sqrt(sum(error_uc * error_uc) / (2*n_pred*n_pred))
-
-        ax2[2].quiver(xv, yv, v1 - v1_pred_uc.reshape(n_pred, n_pred).detach(), v2 - v2_pred_uc.reshape(n_pred, n_pred).detach(),
-                      scale=Q.scale, scale_units='inches')
-        ax2[2].set_xlabel('$x_1$')
-        ax2[2].set_ylabel('$x_2$')
-        ax2[2].set_title('Unconstrained NN RMS error ={0:.2f}'.format(rms_uc.item()))
-        plt.show()
-        if args.save_plot:
-            f2.savefig('div_free_fields.eps', format='eps')
+    print(Cviol_uc.max())
 
 
+with torch.no_grad():
+    # Initialize second plot
+    f2, ax2 = plt.subplots(1, 3, figsize=(13, 4))
+    Q = ax2[0].quiver(xv2, yv2, v1_2, v2_2, scale=None, scale_units='inches')
+    Q._init()
+    assert isinstance(Q.scale, float)
+    ax2[0].quiver(x1_train, x2_train, y1_train, y2_train, scale=Q.scale, scale_units='inches', color='r')
+    ax2[0].set_xlabel('$x_1$')
+    ax2[0].set_ylabel('$x_2$')
 
 
+    ax2[1].pcolor(xv, yv, Cviol, vmin=-Cviol_uc.max(), vmax=Cviol_uc.max())
+    ax2[1].set_xlabel('$x_1$')
+    ax2[1].set_ylabel('$x_2$')
+    ax2[1].set_title('Our Approach')
 
 
-
-
-
-
-
-
-
+    ax2[2].pcolor(xv, yv, Cviol_uc, vmin=-Cviol_uc.max(), vmax=Cviol_uc.max())
+    ax2[2].set_xlabel('$x_1$')
+    ax2[2].set_ylabel('$x_2$')
+    ax2[2].set_title('Unconstrained NN')
+    plt.show()
+    f2.savefig('constraint_violations.jpg', format='jpg')
 
 
 
