@@ -238,7 +238,18 @@ v2_pred_uc = v_pred_uc[:, 1]
 error_uc = torch.cat((v1.reshape(400) - v1_pred_uc.detach(), v2.reshape(400) - v2_pred_uc.detach()), 0)
 rms_uc = torch.sqrt(sum(error_uc * error_uc) / 800)
 
-
+# ----------------- save configuration options and results -------------------------------
+if args.save_file is not '':
+    if args.display:
+        print('Saving data')
+    data = vars(args)       # puts the config options into a dict
+    data['train_loss'] = train_loss
+    data['val_loss'] = val_loss
+    data['train_loss_uc'] = train_loss_uc
+    data['val_loss_uc'] = val_loss_uc
+    data['final_rms_error'] = rms_error.detach().numpy()        # these are tensors so have to convert to numpy
+    data['final_rms_error_uc'] = rms_uc.detach().numpy()
+    sio.savemat('./results/'+ args.save_file+'.mat', data)
 
 
 if args.display:
