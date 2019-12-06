@@ -14,4 +14,4 @@ echo "Running with Z=$Z and V=$V and I=$I"
 #python mag_data_experiment.py --scheduler 1 --batch_size 250 --epochs 500 --n_train 6000 --save_file mag_data_netsize/exp_${Z}_trial_${I} --net_hidden_size ${Z} ${V}
 
 
-python experiment_2D.py --n_data 4000 --net_hidden_size ${Z} ${V} --save_file net_size_study2/exp_${Z}_trial_${I} --epochs 400 --scheduler 1
+python experiment_2D.py --n_data 4000 --net_hidden_size ${Z} ${V} --save_file net_size_study200/exp_${Z}_trial_${I} --epochs 400 --scheduler 1
