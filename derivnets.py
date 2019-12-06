@@ -1,7 +1,111 @@
 import torch
 import math
+import torch.autograd as ag
 import sys
 from torch.utils import data
+
+class DerivNet(torch.nn.Module):
+    def __init__(self, base_net):
+        super(DerivNet, self).__init__()
+        self.base_net = base_net
+
+    def forward(self, x):
+        x.requires_grad = True
+        y = self.base_net(x)
+        dydx = ag.grad(outputs=y, inputs=x, create_graph=True, grad_outputs=torch.ones(y.size()),
+                       retain_graph=True, only_inputs=True)[0]
+        return y, dydx
+
+class DivFree2D(torch.nn.Module):
+    def __init__(self, base_net):
+        super(DivFree2D, self).__init__()
+        self.base_net = base_net
+
+    def forward(self, x):
+        x.requires_grad = True
+        y = self.base_net(x)
+        dydx = ag.grad(outputs=y, inputs=x, create_graph=True, grad_outputs=torch.ones(y.size()),
+                       retain_graph=True, only_inputs=True)[0]
+        return y, dydx[:,1].unsqueeze(1), -dydx[:,0].unsqueeze(1)
+
+
+class Strain2d(torch.nn.Module):
+    def __init__(self, base_net, nu=0.28):
+        super(Strain2d, self).__init__()
+        self.base_net = base_net
+        self.nu = nu
+
+    def forward(self, x):
+        x.requires_grad = True
+        y = self.base_net(x)
+        g = ag.grad(outputs=y, inputs=x, create_graph=True, grad_outputs=torch.ones(y.size()),
+                       retain_graph=True, only_inputs=True)[0]
+        hx = ag.grad(outputs=g[:, 0], inputs=x, create_graph=True, grad_outputs=torch.ones(g[:, 0].size()),
+                       retain_graph=True, only_inputs=True)[0]
+        hy = ag.grad(outputs=g[:, 1], inputs=x, create_graph=True, grad_outputs=torch.ones(g[:, 1].size()),
+                     retain_graph=True, only_inputs=True)[0]
+        Exx = hy[:, 1].unsqueeze(1) - self.nu * hx[:, 0].unsqueeze(1)
+        Eyy = hx[:, 0].unsqueeze(1) - self.nu * hy[:, 1].unsqueeze(1)
+        Exy = - (1 + self.nu) * hx[:, 1].unsqueeze(1)
+        return Exx, Eyy, Exy
+
+class DivFree(torch.nn.Module):
+    def __init__(self, base_net):
+        super(DivFree, self).__init__()
+        self.base_net = base_net
+
+    def forward(self, x):
+        d = x.size(1)
+        x.requires_grad = True
+        y = self.base_net(x)
+        dydx = ag.grad(outputs=y, inputs=x, create_graph=True, grad_outputs=torch.ones(y.size()),
+                       retain_graph=True, only_inputs=True)[0]
+        v = torch.zeros(x.size())
+        for i in range(d):
+            if i < d - 1:
+                v[:, i] += dydx[:, i + 1:].sum(1)
+            if i > 0:
+                v[:, i] += -dydx[:, :i].sum(1)
+        return y, v
+
+
+
+class DivFree_7D(torch.nn.Module):
+    def __init__(self, base_net):
+        super(DivFree_7D, self).__init__()
+        self.base_net = base_net
+
+    def forward(self, x):
+        d = x.size(1)
+        n = x.size(0)
+        x.requires_grad = True
+        y = self.base_net(x)
+        dydx = ag.grad(outputs=y, inputs=x, create_graph=True, grad_outputs=torch.ones(y.size()),
+                       retain_graph=True, only_inputs=True)[0]
+        v = torch.empty(x.size())
+        v[:,0] = dydx[:,2]
+        v[:, 1] = dydx[:, 5]
+        v[:, 2] = -dydx[:, 1]
+        v[:, 3] = dydx[:, 4]
+        v[:, 4] = -dydx[:, 3]
+        v[:, 5] = -dydx[:, 1]
+        v[:, 6] = torch.zeros(n, 1)
+        return y, v
+
+class Conservative_7D(torch.nn.Module):
+    def __init__(self, base_net):
+        super(Conservative_7D, self).__init__()
+        self.base_net = base_net
+
+    def forward(self, x):
+        d = x.size(1)
+        n = x.size(0)
+        x.requires_grad = True
+        y = self.base_net(x)
+        dydx = ag.grad(outputs=y, inputs=x, create_graph=True, grad_outputs=torch.ones(y.size()),
+                       retain_graph=True, only_inputs=True)[0]
+
+        return y, dydx
 
 
 class DerivTanh(torch.nn.Module):
@@ -36,9 +140,9 @@ class DerivQuadRelU(torch.nn.Module):
         return tmp.float()*2*x.t()
 
 
-class DerivNet(torch.nn.Module):
+class DerivNet_old(torch.nn.Module):
     def __init__(self, *modules):
-        super(DerivNet, self).__init__()
+        super(DerivNet_old, self).__init__()
         # *modules is a tuple, I would say its fine to leave it like that
         # self.layer = modules[0]
         self.supported = ['Linear', 'Tanh', 'ReLU']
