@@ -82,8 +82,8 @@ class DivFree_7x(torch.nn.Module):
         y = self.base_net(x)
         dydx = ag.grad(outputs=y, inputs=x, create_graph=True, grad_outputs=torch.ones(y.size()),
                        retain_graph=True, only_inputs=True)[0]
-        v = torch.empty(6,1)
-        v[:,0] = dydx[:,2]
+        v = torch.empty(n, 6)
+        v[:,0] = dydx[:, 2]
         v[:, 1] = dydx[:, 5]
         v[:, 2] = -dydx[:, 0]
         v[:, 3] = dydx[:, 4]

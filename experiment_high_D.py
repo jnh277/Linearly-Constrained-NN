@@ -18,7 +18,7 @@ parser.add_argument('--seed', type=int, default=-1,
                            help='random seed for number generator (default: -1 means not set)')
 parser.add_argument('--batch_size', type=int, default=100,
                            help='batch size (default: 100).')
-parser.add_argument('--net_hidden_size', type=int, nargs='+', default=[120,60],
+parser.add_argument('--net_hidden_size', type=int, nargs='+', default=[100,50],
                            help='two hidden layer sizes (default: [100,50]).',)
 parser.add_argument('--n_data', type=int, default=3000,
                         help='set number of measurements (default:3000)')
@@ -57,39 +57,38 @@ pin_memory = args.pin_memory
 dims = args.dims
 
 
-def vector_field(xt, a=4.0):
-    x = xt.clone()
-    d = x.size(1)
-    x.requires_grad = True
-    # q = torch.exp(-sum(x,1))
-    # q.size
-    F = a*torch.exp(-x.pow(2).sum(1).sqrt()) * torch.sin(4.0*x.prod(1))
-    dF = ag.grad(outputs=F, inputs=x, create_graph=False, grad_outputs=torch.ones(F.size()),
-           retain_graph=False, only_inputs=True)[0]
-    v = torch.zeros(x.size())
-    for i in range(d):
-        if i < d-1:
-            v[:,i] += dF[:,i+1:].sum(1)
-        if i > 0:
-            v[:,i] += -dF[:,:i].sum(1)
-    return v
+# def vector_field(xt, a=0.2):
+#     x = xt.clone()
+#     d = x.size(1)
+#     x.requires_grad = True
+#     F = a*torch.exp(-3*x.pow(2).sum(1).sqrt())*torch.cos(6.0 * x+torch.linspace(0,3,6).unsqueeze(0)).prod(1)
+#     dF = ag.grad(outputs=F, inputs=x, create_graph=False, grad_outputs=torch.ones(F.size()),
+#            retain_graph=False, only_inputs=True)[0]
+#     v = torch.zeros(x.size())
+#     for i in range(d):
+#         if i < d-1:
+#             v[:,i] += dF[:,i+1:].sum(1)
+#         if i > 0:
+#             v[:,i] += -dF[:,:i].sum(1)
+#     return v
 
-def vector_field_7x(xt, a=4.0):
+def vector_field(xt, a=0.2):
     x = xt.clone()
     d = x.size(1)
+    n = x.size(0)
     x.requires_grad = True
     # q = torch.exp(-sum(x,1))
     # q.size
-    F = a*torch.exp(-x.pow(2).sum(1).sqrt()) * torch.sin(4.0*x.prod(1))
+    F = a*torch.exp(-3*x.pow(2).sum(1).sqrt())*torch.cos(6.0 * x+torch.linspace(0,3,6).unsqueeze(0)).prod(1)
     dF = ag.grad(outputs=F, inputs=x, create_graph=False, grad_outputs=torch.ones(F.size()),
            retain_graph=False, only_inputs=True)[0]
-    v = torch.zeros(6,1)
-    v[0] = dF[2]
-    v[1] = dF[5]
-    v[2] = -dF[0]
-    v[3] = dF[4]
-    v[4] = -dF[3]
-    v[5] = -dF[2]
+    v = torch.zeros(n,6)
+    v[:, 0] = dF[:, 2]
+    v[:, 1] = dF[:, 5]
+    v[:, 2] = -dF[:, 0]
+    v[:, 3] = dF[:, 4]
+    v[:, 4] = -dF[:, 3]
+    v[:, 5] = -dF[:, 2]
     return v
 
 # set network size
@@ -105,7 +104,9 @@ n_o_uc = dims
 
 # model = derivnets.DivFree2D(nn.Sequential(nn.Linear(n_in,n_h1),nn.Tanh(),nn.Linear(n_h1,n_h2),
 #                                          nn.Tanh(),nn.Linear(n_h2,n_o)))
-model = derivnets.DivFree(nn.Sequential(nn.Linear(n_in,n_h1),nn.Tanh(),nn.Linear(n_h1,n_h2),
+# model = derivnets.DivFree(nn.Sequential(nn.Linear(n_in,n_h1),nn.Tanh(),nn.Linear(n_h1,n_h2),
+#                                          nn.Tanh(),nn.Linear(n_h2,n_o)))
+model = derivnets.DivFree_7x(nn.Sequential(nn.Linear(n_in,n_h1),nn.Tanh(),nn.Linear(n_h1,n_h2),
                                          nn.Tanh(),nn.Linear(n_h2,n_o)))
 
 model_uc = torch.nn.Sequential(
@@ -277,26 +278,50 @@ if args.display:
     print('Finished')
 
 if args.show_plot:
-    with torch.no_grad():
-        # Initialize plot
-        f, ax = plt.subplots(1, 2, figsize=(8, 6))
-        # ax.pcolor(xv,yv,f_scalar)
+    # with torch.no_grad():
+    # Initialize plot
+    f, ax = plt.subplots(1, 2, figsize=(8, 6))
+    # ax.pcolor(xv,yv,f_scalar)
 
-        ax[0].plot(np.log(train_loss))
-        ax[0].plot(np.log(val_loss))
-        # ax[1].plot(loss_save[1:epoch].log().detach().numpy())
-        ax[0].set_xlabel('training epoch')
-        ax[0].set_ylabel('log mse val loss')
-        ax[0].legend(['training loss', 'val loss'])
-        # ax[0].set_ylim([-5, 0])
+    ax[0].plot(np.log(train_loss))
+    ax[0].plot(np.log(val_loss))
+    # ax[1].plot(loss_save[1:epoch].log().detach().numpy())
+    ax[0].set_xlabel('training epoch')
+    ax[0].set_ylabel('log mse val loss')
+    ax[0].legend(['training loss', 'val loss'])
+    # ax[0].set_ylim([-5, 0])
 
 
-        ax[1].plot(np.log(train_loss_uc))
-        ax[1].plot(np.log(val_loss_uc))
-        ax[1].set_ylabel('log mse val loss')
-        ax[1].set_xlabel('training epoch')
-        ax[1].legend(['training loss','val loss'])
-        # ax[1].set_ylim([-5, 0])
-        plt.show()
+    ax[1].plot(np.log(train_loss_uc))
+    ax[1].plot(np.log(val_loss_uc))
+    ax[1].set_ylabel('log mse val loss')
+    ax[1].set_xlabel('training epoch')
+    ax[1].legend(['training loss','val loss'])
+    # ax[1].set_ylim([-5, 0])
+    plt.show()
+
+    nt = 100
+    xt = torch.zeros(nt,6)
+    xt[:, 0] = torch.linspace(0,1.0,nt)
+    xt[:, 5] = torch.linspace(0, 1.0, nt)
+    vt = vector_field(xt)
+    (ythat, vthat) = model(xt)
+    v_uc = model_uc(xt)
+
+    f2, ax2 = plt.subplots(1, 2, figsize=(8, 6))
+    # ax.pcolor(xv,yv,f_scalar)
+
+    ax2[0].plot(xt[:,0].detach().numpy(),vt[:,0].detach().numpy())
+    ax2[0].plot(xt[:, 0].detach().numpy(), vthat[:, 0].detach().numpy())
+    ax2[0].plot(xt[:, 0].detach().numpy(), v_uc[:, 0].detach().numpy())
+    # ax[0].set_xlabel('training epoch')
+    # ax[0].set_ylabel('log mse val loss')
+    # ax[0].legend(['training loss', 'val loss'])
+    # ax[0].set_ylim([-5, 0])
+
+    ax2[1].plot(xt[:,0].detach().numpy(),vt[:,5].detach().numpy())
+    ax2[1].plot(xt[:, 0].detach().numpy(), vthat[:, 5].detach().numpy())
+    ax2[1].plot(xt[:, 0].detach().numpy(), v_uc[:, 5].detach().numpy())
+    plt.show()
 
 
