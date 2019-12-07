@@ -297,8 +297,10 @@ with torch.no_grad():
     Q._init()
     assert isinstance(Q.scale, float)
     ax2[0].quiver(x1_train, x2_train, y1_train, y2_train, scale=Q.scale, scale_units='inches', color='r')
+    ax2[0].plot([1.0, 3.0, 3.0, 1.0, 1.0], [1.0, 1.0, 3.0, 3.0, 1.0],'--')
     ax2[0].set_xlabel('$x_1$')
     ax2[0].set_ylabel('$x_2$')
+
 
 
     ax2[1].pcolor(xv, yv, Cviol, vmin=-Cviol_uc.max(), vmax=Cviol_uc.max())
@@ -312,7 +314,7 @@ with torch.no_grad():
     ax2[2].set_ylabel('$x_2$')
     ax2[2].set_title('Unconstrained NN')
     plt.show()
-    f2.savefig('constraint_violations.jpg', format='jpg')
+    f2.savefig('constraint_violations.png', format='png')
 
 
 

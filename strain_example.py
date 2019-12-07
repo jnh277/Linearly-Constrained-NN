@@ -4,19 +4,22 @@ import derivnets
 import torch.nn as nn
 from torch.utils import data
 import numpy as np
+import scipy.io as sio
 
 torch.manual_seed(10)
 epochs = 600
 display = True
-n_data = 3000
-batch_size = 250
+# n_data = 1000  # 1000 starts looking very rough for unconstrained NN, but still looks ok for invariant
+# batch_size = 200
+n_data = 300
+batch_size = 100
 num_workers = 2
 pin_memory = True
 scheduler = 1
 save_file = ''
 l = 20e-3
 h = 10e-3
-sc = 1e2
+sc = 2e2
 
 def strain_field(x,y, P=2e3, E=200e9,l=20e-3,h=10e-3,t=5e-3,nu=0.28):
     I = t*h*h*h/12
@@ -33,10 +36,15 @@ xv, yv = torch.meshgrid([torch.arange(0.0, 100.0) * l / 100.0, torch.arange(0.0,
 
 
 # set network size
+# n_in = 2
+# n_h1 = 50
+# n_h2 = 25
+# n_h3 = 10
+# n_o = 1
 n_in = 2
-n_h1 = 50
-n_h2 = 25
-n_h3 = 10
+n_h1 = 20
+n_h2 = 10
+n_h3 = 5
 n_o = 1
 
 # two outputs for the unconstrained network
@@ -56,7 +64,7 @@ model_uc = torch.nn.Sequential(
     torch.nn.Linear(n_h3, n_o_uc),
 )
 
-sigma = 0.0
+sigma = 1e-5
 # pregenerate validation data
 x_val = torch.cat((l*torch.rand(2000, 1),-h/2+h*torch.rand(2000, 1)),1)
 x1_val = x_val[:, 0].unsqueeze(1)
@@ -119,7 +127,7 @@ training_generator = data.DataLoader(training_set, **DL_params)
 criterion = torch.nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01)   # these should also be setable parameters
 if scheduler == 1:
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=50,
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=75,
                                                      min_lr=1e-10,
                                                      factor=0.25,
                                                     cooldown=50)
@@ -194,9 +202,9 @@ def train_uc(epoch):
         optimizer_uc.zero_grad()
         x_train = torch.cat((x1_train, x2_train), 1)
         Ehat = model_uc(x_train*sc)
-        Exx = Ehat[:, 0]
-        Eyy = Ehat[:, 1]
-        Exy = Ehat[:, 2]
+        Exx = Ehat[:, 0].unsqueeze(1)
+        Eyy = Ehat[:, 1].unsqueeze(1)
+        Exy = Ehat[:, 2].unsqueeze(1)
         loss = (criterion(Exx_train, Exx) + criterion(Eyy_train, Eyy) + criterion(Exy_train, Exy)) / 3
         loss.backward()
         optimizer_uc.step()
@@ -208,9 +216,9 @@ def eval_uc(epoch):
     model_uc.eval()
     with torch.no_grad():
         Ehat = model_uc(x_val*sc)
-        Exx = Ehat[:, 0]
-        Eyy = Ehat[:, 1]
-        Exy = Ehat[:, 2]
+        Exx = Ehat[:, 0].unsqueeze(1)
+        Eyy = Ehat[:, 1].unsqueeze(1)
+        Exy = Ehat[:, 2].unsqueeze(1)
         loss = (criterion(Exx_val, Exx) + criterion(Eyy_val, Eyy) + criterion(Exy_val, Exy)) / 3
     return loss
 
@@ -245,6 +253,9 @@ error_new = torch.cat((Exx_gv.view(-1,1) - Exx_uc.detach(), Eyy_gv.reshape(-1, 1
 rms_uc = torch.sqrt((error_new * error_new).mean())
 mae_uc = error_new.abs().mean()
 
+# dat = {'xy': x_pred}
+# sio.savemat('./results/strain_xy.mat', dat)
+
 
 with torch.no_grad():
     # cmap = 'viridis'
@@ -270,57 +281,58 @@ with torch.no_grad():
 
     cmap = 'RdYlBu'
     f2, ax2 = plt.subplots(3, 3, figsize=(13, 12))
-    ax2[0,0].pcolor(xv, yv, Exx_gv,cmap=plt.get_cmap(cmap))
+    ax2[0,0].pcolor(xv, yv, Exx_gv,cmap=plt.get_cmap(cmap),vmin=-2.35e-3, vmax=2.35e-3)
     ax2[0,0].set_xlabel('$x_1$')
     ax2[0,0].set_ylabel('$x_2$')
     ax2[0,0].set_title('Exx strain')
-    ax2[0,0].plot(x1_train,x2_train,'ok')
+    # ax2[0,0].plot(x1_train,x2_train,'ok')
 
 
-    ax2[0, 1].pcolor(xv, yv, Eyy_gv,cmap=plt.get_cmap(cmap))
+    ax2[0, 1].pcolor(xv, yv, Eyy_gv,cmap=plt.get_cmap(cmap),vmin=-6.5e-4, vmax=6.5e-4)
     ax2[0, 1].set_xlabel('$x_1$')
     ax2[0, 1].set_ylabel('$x_2$')
     ax2[0, 1].set_title('Eyy strain')
 
 
-    ax2[0, 2].pcolor(xv, yv, Exy_gv,cmap=plt.get_cmap(cmap))
+    ax2[0, 2].pcolor(xv, yv, Exy_gv,cmap=plt.get_cmap(cmap),vmin=-4e-4, vmax=0)
     ax2[0, 2].set_xlabel('$x_1$')
     ax2[0, 2].set_ylabel('$x_2$')
     ax2[0, 2].set_title('Exy Strain')
 
-    ax2[1,0].pcolor(xv, yv, Exx_p.detach().reshape(Exx_gv.size()),cmap=plt.get_cmap(cmap))
+    ax2[1,0].pcolor(xv, yv, Exx_p.detach().reshape(Exx_gv.size()),cmap=plt.get_cmap(cmap),vmin=-2.35e-3, vmax=2.35e-3)
     ax2[1,0].set_xlabel('$x_1$')
     ax2[1,0].set_ylabel('$x_2$')
-    ax2[1,0].set_title('Exx strain')
+    ax2[1,0].set_title('Constrained NN Exx strain')
     # ax2[1,0].plot(x1_train,x2_train,'ok')
 
 
-    ax2[1, 1].pcolor(xv, yv, Eyy_p.detach().reshape(Exx_gv.size()),cmap=plt.get_cmap(cmap))
+    ax2[1, 1].pcolor(xv, yv, Eyy_p.detach().reshape(Exx_gv.size()),cmap=plt.get_cmap(cmap),vmin=-6.5e-4, vmax=6.5e-4)
     ax2[1, 1].set_xlabel('$x_1$')
     ax2[1, 1].set_ylabel('$x_2$')
-    ax2[1, 1].set_title('Eyy strain')
+    ax2[1, 1].set_title('Constrained NN Eyy strain')
 
 
-    ax2[1, 2].pcolor(xv, yv, Exy_p.detach().reshape(Exx_gv.size()),cmap=plt.get_cmap(cmap))
+    ax2[1, 2].pcolor(xv, yv, Exy_p.detach().reshape(Exx_gv.size()),cmap=plt.get_cmap(cmap),vmin=-4e-4, vmax=0)
     ax2[1, 2].set_xlabel('$x_1$')
     ax2[1, 2].set_ylabel('$x_2$')
-    ax2[1, 2].set_title('Exy Strain')
+    ax2[1, 2].set_title('Constrained NN Exy Strain')
 
-    ax2[2,0].pcolor(xv, yv, Exx_uc.detach().reshape(Exx_gv.size()),cmap=plt.get_cmap(cmap))
+    ax2[2,0].pcolor(xv, yv, Exx_uc.detach().reshape(Exx_gv.size()),cmap=plt.get_cmap(cmap),vmin=-2.35e-3, vmax=2.35e-3)
     ax2[2,0].set_xlabel('$x_1$')
     ax2[2,0].set_ylabel('$x_2$')
-    ax2[2,0].set_title('Exx strain')
+    ax2[2,0].set_title('Standard NN Exx strain')
     # ax2[2,0].plot(x1_train,x2_train,'ok')
 
 
-    ax2[2, 1].pcolor(xv, yv, Eyy_uc.detach().reshape(Exx_gv.size()),cmap=plt.get_cmap(cmap))
+    ax2[2, 1].pcolor(xv, yv, Eyy_uc.detach().reshape(Exx_gv.size()),cmap=plt.get_cmap(cmap),vmin=-6.5e-4, vmax=6.5e-4)
     ax2[2, 1].set_xlabel('$x_1$')
     ax2[2, 1].set_ylabel('$x_2$')
-    ax2[2, 1].set_title('Eyy strain')
+    ax2[2, 1].set_title('Standard NN Eyy strain')
 
 
-    ax2[2, 2].pcolor(xv, yv, Exy_uc.detach().reshape(Exx_gv.size()),cmap=plt.get_cmap(cmap))
+    ax2[2, 2].pcolor(xv, yv, Exy_uc.detach().reshape(Exx_gv.size()),cmap=plt.get_cmap(cmap),vmin=-4e-4, vmax=0)
     ax2[2, 2].set_xlabel('$x_1$')
     ax2[2, 2].set_ylabel('$x_2$')
-    ax2[2, 2].set_title('Exy Strain')
+    ax2[2, 2].set_title('Standard NN Exy Strain')
     plt.show()
+    # f2.savefig('strain_fields.png', format='png')
