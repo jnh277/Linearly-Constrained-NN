@@ -18,7 +18,7 @@ parser.add_argument('--seed', type=int, default=-1,
                            help='random seed for number generator (default: -1 means not set)')
 parser.add_argument('--batch_size', type=int, default=100,
                            help='batch size (default: 100).')
-parser.add_argument('--net_hidden_size', type=int, nargs='+', default=[300,150],
+parser.add_argument('--net_hidden_size', type=int, nargs='+', default=[150,75],
                            help='two hidden layer sizes (default: [100,50]).',)
 parser.add_argument('--n_data', type=int, default=3000,
                         help='set number of measurements (default:3000)')
@@ -35,15 +35,15 @@ parser.add_argument('--pin_memory', action='store_true',
                     help='enables pin memory (default:False)')
 parser.add_argument('--scheduler', type=int, default=0,
                     help='0 selects interval reduction, 1 selects plateau (default:0)')
-parser.add_argument('--dims', type=int, default=4,
+parser.add_argument('--dims', type=int, default=6,
                     help='number of dimensions to run experiment for (default: 3)')
 
 args = parser.parse_args()
-args.n_data = 20000
+args.n_data = 5000
 args.display = True
 args.show_plot = True
 args.epochs = 600
-args.batch_size = 1000
+args.batch_size = 250
 # args.scheduler = 0
 
 if args.seed >= 0:
@@ -60,7 +60,7 @@ def vector_field(xt, a=4.0):
     x.requires_grad = True
     # q = torch.exp(-sum(x,1))
     # q.size
-    F = a*torch.exp(-x.pow(2).sum(1).sqrt()) * torch.sin(x.prod(1))
+    F = a*torch.exp(-x.pow(2).sum(1).sqrt()) * torch.sin(4.0*x.prod(1))
     dF = ag.grad(outputs=F, inputs=x, create_graph=False, grad_outputs=torch.ones(F.size()),
            retain_graph=False, only_inputs=True)[0]
     v = torch.zeros(x.size())
@@ -69,6 +69,24 @@ def vector_field(xt, a=4.0):
             v[:,i] += dF[:,i+1:].sum(1)
         if i > 0:
             v[:,i] += -dF[:,:i].sum(1)
+    return v
+
+def vector_field_7x(xt, a=4.0):
+    x = xt.clone()
+    d = x.size(1)
+    x.requires_grad = True
+    # q = torch.exp(-sum(x,1))
+    # q.size
+    F = a*torch.exp(-x.pow(2).sum(1).sqrt()) * torch.sin(4.0*x.prod(1))
+    dF = ag.grad(outputs=F, inputs=x, create_graph=False, grad_outputs=torch.ones(F.size()),
+           retain_graph=False, only_inputs=True)[0]
+    v = torch.zeros(6,1)
+    v[0] = dF[2]
+    v[1] = dF[5]
+    v[2] = -dF[0]
+    v[3] = dF[4]
+    v[4] = -dF[3]
+    v[5] = -dF[2]
     return v
 
 # set network size
@@ -96,7 +114,7 @@ model_uc = torch.nn.Sequential(
 )
 
 # pregenerate validation data
-x_val = 4.0 * torch.rand(10000, dims)
+x_val = torch.rand(5000, dims)
 x1_val = x_val[:, 0].unsqueeze(1)
 x2_val = x_val[:, 1].unsqueeze(1)
 
@@ -104,7 +122,7 @@ v_true = vector_field(x_val)
 y_val = v_true + 0.1*torch.randn(x_val.size())
 
 # generate training data
-x_train = 4.0 * torch.rand(n_data, dims)
+x_train = torch.rand(n_data, dims)
 
 v_train = vector_field(x_train)
 y_train = v_train + 0.1 * torch.randn(x_train.size())
@@ -192,7 +210,7 @@ for epoch in range(args.epochs):
 # work out the rms error for this one
 (f_pred, vhat) = model(x_val)
 mse = criterion(v_true,vhat)
-rms_error = torch.sqrt(mse.detach())
+rms = torch.sqrt(mse.detach())
 
 
 # ---------------  Set up and train the uncconstrained model -------------------------------
@@ -246,8 +264,8 @@ for epoch in range(args.epochs):
 
 
 (vhat_uc) = model_uc(x_val)
-mse = criterion(v_true,vhat_uc)
-rms_uc = torch.sqrt(mse.detach())
+mse_uc = criterion(v_true,vhat_uc)
+rms_uc = torch.sqrt(mse_uc.detach())
 
 
 

@@ -62,7 +62,7 @@ def vector_field(xt, a=0.25):
     # q.size
     # F = a*torch.exp(-x.pow(2).sum(1).sqrt()) * torch.sin(x.prod(1))
     # F = a*torch.sin(torch.exp(-x.prod(1)))
-    F = a*torch.sin(x[:,0]*x[:,1]+x[:,2]*x[:,3] + x[:,4]*x[:,5] + x[:,6])
+    F = a*torch.sin(4.0*(x[:,0]*x[:,1]+x[:,2]*x[:,3] + x[:,4]*x[:,5] + x[:,6]))
     dF = ag.grad(outputs=F, inputs=x, create_graph=False, grad_outputs=torch.ones(F.size()),
            retain_graph=False, only_inputs=True)[0]
     return dF
@@ -88,7 +88,7 @@ model_uc = torch.nn.Sequential(
 )
 
 # pregenerate validation data
-x_val = 4.0 * torch.rand(10000, dims)
+x_val = torch.rand(10000, dims)
 x1_val = x_val[:, 0].unsqueeze(1)
 x2_val = x_val[:, 1].unsqueeze(1)
 
@@ -96,7 +96,7 @@ v_true = vector_field(x_val)
 y_val = v_true + 0.1*torch.randn(x_val.size())
 
 # generate training data
-x_train = 4.0 * torch.rand(n_data, dims)
+x_train = torch.rand(n_data, dims)
 
 v_train = vector_field(x_train)
 y_train = v_train + 0.1 * torch.randn(x_train.size())

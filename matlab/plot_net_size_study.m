@@ -2,7 +2,8 @@
 clear all
 clc
 
-files = dir('../results/net_size_study/*.mat');
+% files = dir('../results/net_size_study/*.mat');
+files = dir('../results/net_size_study200/*.mat');
 
 for i = 1:length(files)
     r(i) = load(strcat(files(i).folder,'/',files(i).name));
@@ -43,7 +44,8 @@ end
 fontsize = 20;
 
 % inds = 1:24;
-inds = [1:7, 9:2:19, 20 21 22 23];
+% inds = [1:7, 9:2:19, 20 21 22 23];
+inds = 1:length(u_net_size);
 figure(1)
 set(gcf,'Position',[34         487        1080         438])
 subplot 121

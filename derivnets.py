@@ -70,9 +70,9 @@ class DivFree(torch.nn.Module):
 
 
 
-class DivFree_7D(torch.nn.Module):
+class DivFree_7x(torch.nn.Module):
     def __init__(self, base_net):
-        super(DivFree_7D, self).__init__()
+        super(DivFree_7x, self).__init__()
         self.base_net = base_net
 
     def forward(self, x):
@@ -82,14 +82,13 @@ class DivFree_7D(torch.nn.Module):
         y = self.base_net(x)
         dydx = ag.grad(outputs=y, inputs=x, create_graph=True, grad_outputs=torch.ones(y.size()),
                        retain_graph=True, only_inputs=True)[0]
-        v = torch.empty(x.size())
+        v = torch.empty(6,1)
         v[:,0] = dydx[:,2]
         v[:, 1] = dydx[:, 5]
-        v[:, 2] = -dydx[:, 1]
+        v[:, 2] = -dydx[:, 0]
         v[:, 3] = dydx[:, 4]
         v[:, 4] = -dydx[:, 3]
-        v[:, 5] = -dydx[:, 1]
-        v[:, 6] = torch.zeros(n, 1)
+        v[:, 5] = -dydx[:, 2]
         return y, v
 
 class Conservative_7D(torch.nn.Module):
