@@ -18,7 +18,7 @@ parser.add_argument('--seed', type=int, default=-1,
                            help='random seed for number generator (default: -1 means not set)')
 parser.add_argument('--batch_size', type=int, default=100,
                            help='batch size (default: 100).')
-parser.add_argument('--net_hidden_size', type=int, nargs='+', default=[150,75],
+parser.add_argument('--net_hidden_size', type=int, nargs='+', default=[120,60],
                            help='two hidden layer sizes (default: [100,50]).',)
 parser.add_argument('--n_data', type=int, default=3000,
                         help='set number of measurements (default:3000)')
@@ -39,12 +39,15 @@ parser.add_argument('--dims', type=int, default=6,
                     help='number of dimensions to run experiment for (default: 3)')
 
 args = parser.parse_args()
-args.n_data = 5000
+args.n_data = 10000
 args.display = True
 args.show_plot = True
 args.epochs = 600
 args.batch_size = 250
+sigma = 1e-4
 # args.scheduler = 0
+
+args.seed = 10
 
 if args.seed >= 0:
     torch.manual_seed(args.seed)
@@ -119,13 +122,13 @@ x1_val = x_val[:, 0].unsqueeze(1)
 x2_val = x_val[:, 1].unsqueeze(1)
 
 v_true = vector_field(x_val)
-y_val = v_true + 0.1*torch.randn(x_val.size())
+y_val = v_true + sigma*torch.randn(x_val.size())
 
 # generate training data
 x_train = torch.rand(n_data, dims)
 
 v_train = vector_field(x_train)
-y_train = v_train + 0.1 * torch.randn(x_train.size())
+y_train = v_train + sigma * torch.randn(x_train.size())
 
 class Dataset(data.Dataset):
     'Characterizes a dataset for PyTorch'
@@ -160,9 +163,9 @@ training_generator = data.DataLoader(training_set, **DL_params)
 criterion = torch.nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01)   # these should also be setable parameters
 if args.scheduler == 1:
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10,
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=50,
                                                      min_lr=1e-10,
-                                                     factor=0.5,
+                                                     factor=0.25,
                                                     cooldown=50)
 else:
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 100, gamma=0.5, last_epoch=-1)
@@ -216,9 +219,9 @@ rms = torch.sqrt(mse.detach())
 # ---------------  Set up and train the uncconstrained model -------------------------------
 optimizer_uc = torch.optim.Adam(model_uc.parameters(), lr=0.01)
 if args.scheduler == 1:
-    scheduler_uc = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_uc, patience=10,
+    scheduler_uc = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_uc, patience=50,
                                                      min_lr=1e-10,
-                                                    factor=0.5,
+                                                    factor=0.25,
                                                     cooldown=50)
 else:
     scheduler_uc = torch.optim.lr_scheduler.StepLR(optimizer_uc, 100, gamma=0.5, last_epoch=-1)
@@ -285,7 +288,7 @@ if args.show_plot:
         ax[0].set_xlabel('training epoch')
         ax[0].set_ylabel('log mse val loss')
         ax[0].legend(['training loss', 'val loss'])
-        ax[0].set_ylim([-5, 0])
+        # ax[0].set_ylim([-5, 0])
 
 
         ax[1].plot(np.log(train_loss_uc))
@@ -293,7 +296,7 @@ if args.show_plot:
         ax[1].set_ylabel('log mse val loss')
         ax[1].set_xlabel('training epoch')
         ax[1].legend(['training loss','val loss'])
-        ax[1].set_ylim([-5, 0])
+        # ax[1].set_ylim([-5, 0])
         plt.show()
 
 
