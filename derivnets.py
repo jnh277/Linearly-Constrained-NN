@@ -1,6 +1,7 @@
 import torch
 import math
 import torch.autograd as ag
+import torch.nn as nn
 import sys
 from torch.utils import data
 
@@ -95,10 +96,14 @@ class Conservative_7D(torch.nn.Module):
     def __init__(self, base_net):
         super(Conservative_7D, self).__init__()
         self.base_net = base_net
+        for m in self.base_net.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, mean=0, std=0.5)
+                nn.init.normal_(m.weight, mean=0, std=0.5)
 
     def forward(self, x):
-        d = x.size(1)
-        n = x.size(0)
+        # d = x.size(1)
+        # n = x.size(0)
         x.requires_grad = True
         y = self.base_net(x)
         dydx = ag.grad(outputs=y, inputs=x, create_graph=True, grad_outputs=torch.ones(y.size()),

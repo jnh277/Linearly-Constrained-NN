@@ -18,7 +18,7 @@ parser.add_argument('--seed', type=int, default=-1,
                            help='random seed for number generator (default: -1 means not set)')
 parser.add_argument('--batch_size', type=int, default=100,
                            help='batch size (default: 100).')
-parser.add_argument('--net_hidden_size', type=int, nargs='+', default=[2000,1000],
+parser.add_argument('--net_hidden_size', type=int, nargs='+', default=[200,100],
                            help='two hidden layer sizes (default: [100,50]).',)
 parser.add_argument('--n_data', type=int, default=3000,
                         help='set number of measurements (default:3000)')
@@ -42,9 +42,10 @@ args = parser.parse_args()
 args.n_data = 10000
 args.display = True
 args.show_plot = True
-args.epochs = 100
+args.epochs = 500
 args.batch_size = 500
-# args.scheduler = 0
+sigma = 1e-2
+args.scheduler = 0
 
 if args.seed >= 0:
     torch.manual_seed(args.seed)
@@ -54,15 +55,10 @@ pin_memory = args.pin_memory
 dims = args.dims
 
 
-def vector_field(xt, a=0.25):
+def vector_field(xt, a=25):
     x = xt.clone()
-    d = x.size(1)
     x.requires_grad = True
-    # q = torch.exp(-sum(x,1))
-    # q.size
-    # F = a*torch.exp(-x.pow(2).sum(1).sqrt()) * torch.sin(x.prod(1))
-    # F = a*torch.sin(torch.exp(-x.prod(1)))
-    F = a*torch.sin(4.0*(x[:,0]*x[:,1]+x[:,2]*x[:,3] + x[:,4]*x[:,5] + x[:,6]))
+    F = a*torch.exp(-3.0 * x.pow(2).sum(1)) * torch.cos(6.0 * x + torch.linspace(0, 3, 7).unsqueeze(0)).prod(1)
     dF = ag.grad(outputs=F, inputs=x, create_graph=False, grad_outputs=torch.ones(F.size()),
            retain_graph=False, only_inputs=True)[0]
     return dF
@@ -76,8 +72,12 @@ n_o = 1
 # two outputs for the unconstrained network
 n_o_uc = dims
 
-model = derivnets.Conservative_7D(nn.Sequential(nn.Linear(n_in,n_h1),nn.Tanh(),nn.Linear(n_h1,n_h2),
-                                         nn.Tanh(),nn.Linear(n_h2,n_o)))
+# model = derivnets.Conservative_7D(nn.Sequential(nn.Linear(n_in,n_h1),nn.Tanh(),nn.Linear(n_h1,n_h2),
+#                                          nn.Tanh(),nn.Linear(n_h2,n_o)))
+
+model = derivnets.Conservative_7D(nn.Sequential(nn.Linear(n_in,1000),nn.Tanh(),nn.Linear(1000,500),
+                                         nn.Tanh(),nn.Linear(500,250),nn.Tanh(),nn.Linear(250,100),
+                                                nn.Tanh(),nn.Linear(n_h2,n_o)))
 
 model_uc = torch.nn.Sequential(
     torch.nn.Linear(n_in, n_h1),
@@ -93,13 +93,13 @@ x1_val = x_val[:, 0].unsqueeze(1)
 x2_val = x_val[:, 1].unsqueeze(1)
 
 v_true = vector_field(x_val)
-y_val = v_true + 0.1*torch.randn(x_val.size())
+y_val = v_true + sigma*torch.randn(x_val.size())
 
 # generate training data
 x_train = torch.rand(n_data, dims)
 
 v_train = vector_field(x_train)
-y_train = v_train + 0.1 * torch.randn(x_train.size())
+y_train = v_train + sigma * torch.randn(x_train.size())
 
 class Dataset(data.Dataset):
     'Characterizes a dataset for PyTorch'
@@ -139,7 +139,7 @@ if args.scheduler == 1:
                                                      factor=0.5,
                                                     cooldown=25)
 else:
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 100, gamma=0.5, last_epoch=-1)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 150, gamma=0.25, last_epoch=-1)
 
 
 def train(epoch):
@@ -149,7 +149,7 @@ def train(epoch):
     for x_train, y_train in training_generator:
         optimizer.zero_grad()
         (yhat, vhat) = model(x_train)
-        loss = criterion(y_train,vhat)
+        loss = criterion(y_train, vhat)
         loss.backward()
         optimizer.step()
         total_loss += loss
@@ -195,7 +195,7 @@ if args.scheduler == 1:
                                                     factor=0.5,
                                                     cooldown=25)
 else:
-    scheduler_uc = torch.optim.lr_scheduler.StepLR(optimizer_uc, 100, gamma=0.5, last_epoch=-1)
+    scheduler_uc = torch.optim.lr_scheduler.StepLR(optimizer_uc, 100, gamma=0.1, last_epoch=-1)
 
 def train_uc(epoch):
     model_uc.train()
@@ -270,4 +270,27 @@ if args.show_plot:
         ax[1].set_ylim([-5, 0])
         plt.show()
 
+    nt = 100
+    xt = torch.zeros(nt,7)
+    xt[:, 0] = torch.linspace(0,1.0,nt)
+    xt[:, 5] = torch.linspace(0, 1.0, nt)
+    vt = vector_field(xt)
+    (ythat, vthat) = model(xt)
+    v_uc = model_uc(xt)
+
+    f2, ax2 = plt.subplots(1, 2, figsize=(8, 6))
+    # ax.pcolor(xv,yv,f_scalar)
+
+    ax2[0].plot(xt[:,0].detach().numpy(),vt[:,0].detach().numpy())
+    ax2[0].plot(xt[:, 0].detach().numpy(), vthat[:, 0].detach().numpy())
+    ax2[0].plot(xt[:, 0].detach().numpy(), v_uc[:, 0].detach().numpy())
+    # ax[0].set_xlabel('training epoch')
+    # ax[0].set_ylabel('log mse val loss')
+    # ax[0].legend(['training loss', 'val loss'])
+    # ax[0].set_ylim([-5, 0])
+
+    ax2[1].plot(xt[:,0].detach().numpy(),vt[:,5].detach().numpy())
+    ax2[1].plot(xt[:, 0].detach().numpy(), vthat[:, 5].detach().numpy())
+    ax2[1].plot(xt[:, 0].detach().numpy(), v_uc[:, 5].detach().numpy())
+    plt.show()
 
