@@ -41,12 +41,12 @@ parser.add_argument('--sigma', type=int, default=1e-2,
                         help='noise standard deviation (default:1e-2)')
 
 args = parser.parse_args()
-args.display = True
-args.show_plot = True
-args.epochs = 30
-args.batch_size = 350
+# args.display = True
+# args.show_plot = True
+# args.epochs = 30
+# args.batch_size = 350
 sigma = args.sigma
-args.scheduler = 1
+# args.scheduler = 1
 
 if args.seed >= 0:
     torch.manual_seed(1)
@@ -143,7 +143,7 @@ model_uc = nn.Sequential(nn.Linear(n_in,n_h1),nn.Tanh(),nn.Linear(n_h1,n_h2),nn.
 
 # ---------------  Set up and train the uncconstrained model -------------------------------
 criterion = torch.nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=1e-3)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-3)
 if args.scheduler == 1:
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10,
                                                      min_lr=1e-8,
