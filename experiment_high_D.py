@@ -145,12 +145,12 @@ model_uc = nn.Sequential(nn.Linear(n_in,n_h1),nn.Tanh(),nn.Linear(n_h1,n_h2),nn.
 criterion = torch.nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=1e-3)
 if args.scheduler == 1:
-    scheduler_uc = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10,
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10,
                                                      min_lr=1e-8,
                                                     factor=0.25,
                                                     cooldown=25)
 else:
-    scheduler_uc = torch.optim.lr_scheduler.StepLR(optimizer, 100, gamma=0.1, last_epoch=-1)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 100, gamma=0.1, last_epoch=-1)
 
 def train(epoch):
     model.train()
@@ -183,9 +183,9 @@ for epoch in range(args.epochs):
     train_loss[epoch] = train(epoch).detach().numpy()
     v_loss = eval(epoch)
     if args.scheduler == 1:
-        scheduler_uc.step(v_loss)
+        scheduler.step(v_loss)
     else:
-        scheduler_uc.step(epoch)
+        scheduler.step(epoch)
     val_loss[epoch] = v_loss.detach().numpy()
     for param_group in optimizer.param_groups:
         learning_rate[epoch] = param_group['lr']
