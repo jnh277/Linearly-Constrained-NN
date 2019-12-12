@@ -62,8 +62,10 @@ def vector_field(x, a=25):
     w = torch.remainder(torch.linspace(0,d-1,d).unsqueeze(0)*2*3.14/1.61,2*3.14)
     F = a * torch.exp(-3.0 * x.pow(2).sum(1)) * torch.cos(3.0 * x + w).prod(1)
     dF = torch.empty(n, d)
+
     for i in range(d):
-        inds = np.arange(d) != i
+        inds = np.arange(d).tolist()
+        inds.pop(i)
         t = a * torch.exp(-3.0 * x.pow(2).sum(1)) * torch.cos(3.0 * x[:, inds] + w[0, inds].unsqueeze(0)).prod(1)
         v = (-3.0 * torch.sin(3.0 * x[:, i] + w[0, i]) - 6.0 * x[:, i] * torch.cos(3.0 * x[:, i] + w[0, i]))
         dF[:, i] = t * v
@@ -88,7 +90,7 @@ n_h2 = args.net_hidden_size[1]
 n_o = 1
 
 # two outputs for the unconstrained network
-n_o_uc = 1
+n_o_uc = dims
 
 
 # pregenerate validation data
@@ -134,7 +136,7 @@ model = derivnets.DivFree(nn.Sequential(nn.Linear(n_in,n_h1),
                                                 nn.Tanh(),nn.Linear(n_h1,n_h2),
                                          nn.Tanh(),nn.Linear(n_h2,n_o)))
 
-model_uc = nn.Sequential(nn.Linear(n_in,n_h1),nn.Tanh(),nn.Linear(n_h1,n_h2),nn.Tanh(),nn.Linear(n_h2,n_o))
+model_uc = nn.Sequential(nn.Linear(n_in,n_h1),nn.Tanh(),nn.Linear(n_h1,n_h2),nn.Tanh(),nn.Linear(n_h2,n_o_uc))
 
 
 
