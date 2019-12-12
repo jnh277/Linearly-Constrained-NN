@@ -52,20 +52,46 @@ torch.manual_seed(1)
 
 n_data = args.n_data
 pin_memory = args.pin_memory
-dims = 6
+dims = 4
 
-def vector_field(x, a=50):
+# def vector_field(x, a=50):
+#     d = x.size(1)
+#     n = x.size(0)
+#     w = torch.linspace(0, 3, d).unsqueeze(0)
+#     F = a*torch.exp(-3.0 * x.pow(2).sum(1)) * torch.cos(3.0 * x + w).prod(1)
+#     dF = torch.empty(n, d)
+#     for i in range(d):
+#         inds = np.arange(d) != i
+#         t = a * torch.exp(-3.0 * x.pow(2).sum(1))*torch.cos(3.0 * x[:,inds] + w[0,inds].unsqueeze(0)).prod(1)
+#         v = (-3.0*torch.sin(3.0*x[:,i]+w[0,i])-6.0*x[:, i]*torch.cos(3.0*x[:, i]+w[0,i]))
+#         dF[:,i] = t*v
+#
+#     return F, dF
+
+def vector_field(x, a=25):
     d = x.size(1)
     n = x.size(0)
-    w = torch.linspace(0, 3, d).unsqueeze(0)
-    F = a*torch.exp(-3.0 * x.pow(2).sum(1)) * torch.cos(3.0 * x + w).prod(1)
+    # w = torch.linspace(0, 3, d).unsqueeze(0)
+    w = torch.remainder(torch.linspace(0,d-1,d).unsqueeze(0)*2*3.14/1.61,2*3.14)
+    F = a * torch.exp(-3.0 * x.pow(2).sum(1)) * torch.cos(3.0 * x + w).prod(1)
     dF = torch.empty(n, d)
     for i in range(d):
         inds = np.arange(d) != i
-        t = a * torch.exp(-3.0 * x.pow(2).sum(1))*torch.cos(3.0 * x[:,inds] + w[0,inds].unsqueeze(0)).prod(1)
-        v = (-3.0*torch.sin(3.0*x[:,i]+w[0,i])-6.0*x[:, i]*torch.cos(3.0*x[:, i]+w[0,i]))
-        dF[:,i] = t*v
-    return F, dF
+        t = a * torch.exp(-3.0 * x.pow(2).sum(1)) * torch.cos(3.0 * x[:, inds] + w[0, inds].unsqueeze(0)).prod(1)
+        v = (-3.0 * torch.sin(3.0 * x[:, i] + w[0, i]) - 6.0 * x[:, i] * torch.cos(3.0 * x[:, i] + w[0, i]))
+        dF[:, i] = t * v
+
+    v = torch.zeros(n, d)
+    for i in range(d):
+        if i < d-1:
+            v[:,i] += dF[:,i+1:].sum(1)
+        if i > 0:
+            v[:,i] += -dF[:,:i].sum(1)
+
+    return F, v
+
+
+
 
 
 # set network size
@@ -87,7 +113,11 @@ x2_val = x_val[:, 1].unsqueeze(1)
 v_val = v_true + sigma*torch.randn(x_val.size())
 
 
-model = derivnets.Conservative_7D(nn.Sequential(nn.Linear(n_in,n_h1),
+# model = derivnets.Conservative_7D(nn.Sequential(nn.Linear(n_in,n_h1),
+#                                                 nn.Tanh(),nn.Linear(n_h1,n_h2),
+#                                          nn.Tanh(),nn.Linear(n_h2,n_o)))
+
+model = derivnets.DivFree(nn.Sequential(nn.Linear(n_in,n_h1),
                                                 nn.Tanh(),nn.Linear(n_h1,n_h2),
                                          nn.Tanh(),nn.Linear(n_h2,n_o)))
 
@@ -168,8 +198,10 @@ f2, ax2 = plt.subplots(1, 3, figsize=(12, 6))
 ax2[0].plot(xt[:,0].detach().numpy(),vt[:,0].detach().numpy())
 ax2[0].plot(xt[:, 0].detach().numpy(), vthat[:, 0].detach().numpy())
 
-ax2[1].plot(xt[:,0].detach().numpy(),vt[:,dims-1].detach().numpy())
-ax2[1].plot(xt[:, 0].detach().numpy(), vthat[:, dims-1].detach().numpy())
+# ax2[1].plot(xt[:,0].detach().numpy(),vt[:,dims-1].detach().numpy())
+# ax2[1].plot(xt[:, 0].detach().numpy(), vthat[:, dims-1].detach().numpy())
+ax2[1].plot(xt[:,0].detach().numpy(),vt[:,2].detach().numpy())
+ax2[1].plot(xt[:, 0].detach().numpy(), vthat[:, 2].detach().numpy())
 
 ax2[2].plot(xt[:,0].detach().numpy(),ft.detach().numpy())
 ax2[2].plot(xt[:, 0].detach().numpy(), fhat.detach().numpy())
