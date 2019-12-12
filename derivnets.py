@@ -96,10 +96,10 @@ class Conservative_7D(torch.nn.Module):
     def __init__(self, base_net):
         super(Conservative_7D, self).__init__()
         self.base_net = base_net
-        for m in self.base_net.modules():
-            if isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, mean=0, std=0.5)
-                nn.init.normal_(m.weight, mean=0, std=0.5)
+        # for m in self.base_net.modules():
+        #     if isinstance(m, nn.Linear):
+        #         nn.init.normal_(m.weight, mean=0, std=1)
+        #         nn.init.normal_(m.weight, mean=0, std=1)
 
     def forward(self, x):
         # d = x.size(1)
