@@ -314,7 +314,7 @@ with torch.no_grad():
     ax2[2].set_ylabel('$x_2$')
     ax2[2].set_title('Unconstrained NN')
     plt.show()
-    f2.savefig('constraint_violations.png', format='png')
+    # f2.savefig('constraint_violations.png', format='png')
 
 
 

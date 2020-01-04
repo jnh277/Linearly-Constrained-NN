@@ -42,13 +42,13 @@ for i = 1:length(u_n_data)
 end
 
 %%
-fontsize = 20;
+fontsize = 26;
 
 figure(1)
 set(gcf,'Position',[34         487        1080         438])
 subplot 121
 boxplot(log(final_val_loss.'),u_n_data)
-set(gca,'FontSize',fontsize/1.75);
+set(gca,'FontSize',11.5);
 xlabel('Number of measurements','Interpreter','latex','FontSize',fontsize)
 ylabel('log rms validation loss','Interpreter','latex','FontSize',fontsize)
 title('Constrained Neural Network','Interpreter','latex','FontSize',fontsize)
@@ -57,22 +57,24 @@ grid on
 
 subplot 122
 boxplot(log(final_val_loss_uc.'),u_n_data)
-set(gca,'FontSize',fontsize/1.75);
+set(gca,'FontSize',11.5);
 xlabel('Number of measurements','Interpreter','latex','FontSize',fontsize)
 ylabel('log rms validation loss','Interpreter','latex','FontSize',fontsize)
 title('Standard Neural Network','Interpreter','latex','FontSize',fontsize)
 ylim([-8 -5])
 grid on
+p = get(gca,'Position');
+set(gca,'Position',p - [0.05 0 0 0])
 
-figure(2)
-plot(u_n_data,log(mean(final_val_loss,2)))
-hold on
-plot(u_n_data,log(mean(final_val_loss_uc,2)))
-hold off
-legend('Constrained NN','Standard NN')
-set(gca,'FontSize',fontsize/1.75);
-xlabel('Number of measurements','Interpreter','latex','FontSize',fontsize)
-ylabel('log rms validation loss','Interpreter','latex','FontSize',fontsize)
+% figure(2)
+% plot(u_n_data,log(mean(final_val_loss,2)))
+% hold on
+% plot(u_n_data,log(mean(final_val_loss_uc,2)))
+% hold off
+% legend('Constrained NN','Standard NN')
+% set(gca,'FontSize',fontsize/1.75);
+% xlabel('Number of measurements','Interpreter','latex','FontSize',fontsize)
+% ylabel('log rms validation loss','Interpreter','latex','FontSize',fontsize)
 
 mean(final_val_loss.',1)
 std(final_val_loss.')

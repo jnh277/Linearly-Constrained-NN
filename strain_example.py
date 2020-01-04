@@ -11,7 +11,7 @@ epochs = 600
 display = True
 # n_data = 1000  # 1000 starts looking very rough for unconstrained NN, but still looks ok for invariant
 # batch_size = 200
-n_data = 300
+n_data = 100
 batch_size = 100
 num_workers = 2
 pin_memory = True
@@ -20,6 +20,7 @@ save_file = ''
 l = 20e-3
 h = 10e-3
 sc = 2e2
+p_scale = 0.003
 
 def strain_field(x,y, P=2e3, E=200e9,l=20e-3,h=10e-3,t=5e-3,nu=0.28):
     I = t*h*h*h/12
@@ -86,6 +87,23 @@ Exx_train = Exx + sigma * torch.randn(x1_train.size())
 Eyy_train = Eyy + sigma * torch.randn(x1_train.size())
 Exy_train = Exy + sigma * torch.randn(x1_train.size())
 
+max_xx = Exx_train.max()
+max_yy = Eyy_train.max()
+max_xy = Exy_train.max()
+
+min_xx = Exx_train.min()
+min_yy = Eyy_train.min()
+min_xy = Exy_train.min()
+
+def scale(y, max_y, min_y):
+    return 2*(y-min_y)/(max_y-min_y) - 1
+
+def unscale(scaled_y, max_y, min_y):
+    return (scaled_y + 1)/2*(max_y-min_y) + min_y
+
+
+
+
 class Dataset(data.Dataset):
     'Characterizes a dataset for PyTorch'
 
@@ -142,8 +160,11 @@ def train(epoch):
     for x1_train, x2_train, Exx_train, Eyy_train, Exy_train in training_generator:
         optimizer.zero_grad()
         x_train = torch.cat((x1_train, x2_train), 1)
-        (Exx, Eyy, Exy) = model(x_train*sc)
-        loss = (criterion(Exx_train, Exx) + criterion(Eyy_train, Eyy) + criterion(Exy_train, Exy)) / 3  # divide by 2 as it is a mean
+        (Exx, Eyy, Exy, y) = model(x_train*sc)
+        loss = (criterion(Exx_train/p_scale, Exx) + criterion(Eyy_train/p_scale, Eyy) + criterion(Exy_train/p_scale, Exy)) / 3  # divide by 2 as it is a mean
+        # loss = (criterion(scale(Exx_train,max_xx,min_xx), Exx)
+        #         + criterion(scale(Eyy_train,max_yy,min_yy), Eyy)
+        #         + criterion(scale(Exy_train,max_xy,min_xy), Exy)) / 3
         loss.backward()
         optimizer.step()
         total_loss += loss
@@ -153,9 +174,12 @@ def train(epoch):
 def eval(epoch):
     model.eval()
     # with torch.no_grad():
-    (Exx, Eyy, Exy) = model(x_val*sc)
-    loss = (criterion(Exx_val, Exx) + criterion(Eyy_val, Eyy) + criterion(Exy_val, Exy)) / 3
-    return loss.cpu()
+    (Exx, Eyy, Exy, y) = model(x_val*sc)
+    loss = (criterion(Exx_val/p_scale, Exx) + criterion(Eyy_val/p_scale, Eyy) + criterion(Exy_val/p_scale, Exy)) / 3
+    # loss = (criterion(scale(Exx_val, max_xx, min_xx), Exx)
+            # + criterion(scale(Eyy_val, max_yy, min_yy), Eyy)
+            # + criterion(scale(Exy_val, max_xy, min_xy), Exy)) / 3
+    return loss
 
 
 train_loss = np.empty([epochs, 1])
@@ -177,7 +201,13 @@ for epoch in range(epochs):
 
 # determine rms error and plots
 x_pred = torch.cat((xv.reshape(-1,1), yv.reshape(-1,1)), 1)
-(Exx_p, Eyy_p, Exy_p) = model(x_pred*sc)
+(Exx_p, Eyy_p, Exy_p, y) = model(x_pred*sc)
+Exx_p = Exx_p*p_scale
+Eyy_p = Eyy_p*p_scale
+Exy_p = Exy_p*p_scale
+# Exx_p = unscale(Exx_p,max_xx, min_xx)
+# Eyy_p = unscale(Exy_p,max_yy, min_yy)
+# Exy_p = unscale(Eyy_p,max_xy, min_xy)
 error_new = torch.cat((Exx_gv.view(-1,1) - Exx_p.detach(), Eyy_gv.reshape(-1, 1) - Eyy_p.detach(),
                        Exy_gv.reshape(-1, 1) - Exy_p.detach()), 0)
 rms = torch.sqrt((error_new * error_new).mean())
@@ -205,7 +235,9 @@ def train_uc(epoch):
         Exx = Ehat[:, 0].unsqueeze(1)
         Eyy = Ehat[:, 1].unsqueeze(1)
         Exy = Ehat[:, 2].unsqueeze(1)
-        loss = (criterion(Exx_train, Exx) + criterion(Eyy_train, Eyy) + criterion(Exy_train, Exy)) / 3
+        loss = (criterion(scale(Exx_train,max_xx,min_xx), Exx)
+                + criterion(scale(Eyy_train,max_yy,min_yy), Eyy)
+                + criterion(scale(Exy_train,max_xy,min_xy), Exy)) / 3
         loss.backward()
         optimizer_uc.step()
         total_loss += loss
@@ -219,7 +251,10 @@ def eval_uc(epoch):
         Exx = Ehat[:, 0].unsqueeze(1)
         Eyy = Ehat[:, 1].unsqueeze(1)
         Exy = Ehat[:, 2].unsqueeze(1)
-        loss = (criterion(Exx_val, Exx) + criterion(Eyy_val, Eyy) + criterion(Exy_val, Exy)) / 3
+        loss = (criterion(scale(Exx_val, max_xx, min_xx), Exx)
+                + criterion(scale(Eyy_val, max_yy, min_yy), Eyy)
+                + criterion(scale(Exy_val, max_xy, min_xy), Exy)) / 3
+        # loss = (criterion(Exx_val, Exx) + criterion(Eyy_val, Eyy) + criterion(Exy_val, Exy)) / 3
     return loss
 
 
@@ -244,9 +279,9 @@ for epoch in range(epochs):
 # work out final rms error for unconstrainted net
 # work out the rms error for this trial
 (Ehat_uc) = model_uc(x_pred*sc)
-Exx_uc = Ehat_uc[:, 0]
-Eyy_uc = Ehat_uc[:, 1]
-Exy_uc = Ehat_uc[:, 2]
+Exx_uc = unscale(Ehat_uc[:, 0],max_xx, min_xx)
+Eyy_uc = unscale(Ehat_uc[:, 1],max_yy, min_yy)
+Exy_uc = unscale(Ehat_uc[:, 2],max_xy, min_xy)
 
 error_new = torch.cat((Exx_gv.view(-1,1) - Exx_uc.detach(), Eyy_gv.reshape(-1, 1) - Eyy_uc.detach(),
                        Exy_gv.reshape(-1, 1) - Exy_uc.detach()), 0)
@@ -300,6 +335,7 @@ with torch.no_grad():
     ax2[0, 2].set_title('Exy Strain')
 
     ax2[1,0].pcolor(xv, yv, Exx_p.detach().reshape(Exx_gv.size()),cmap=plt.get_cmap(cmap),vmin=-2.35e-3, vmax=2.35e-3)
+    # ax2[1,0].pcolor(xv, yv, Exx_p.detach().reshape(Exx_gv.size())-Exx_gv,cmap=plt.get_cmap(cmap),vmin=-1e-4, vmax=1e-4)
     ax2[1,0].set_xlabel('$x_1$')
     ax2[1,0].set_ylabel('$x_2$')
     ax2[1,0].set_title('Constrained NN Exx strain')
@@ -318,6 +354,7 @@ with torch.no_grad():
     ax2[1, 2].set_title('Constrained NN Exy Strain')
 
     ax2[2,0].pcolor(xv, yv, Exx_uc.detach().reshape(Exx_gv.size()),cmap=plt.get_cmap(cmap),vmin=-2.35e-3, vmax=2.35e-3)
+    # ax2[2, 0].pcolor(xv, yv, Exx_uc.detach().reshape(Exx_gv.size()) - Exx_gv, cmap=plt.get_cmap(cmap), vmin=-1e-4,vmax=1e-4)
     ax2[2,0].set_xlabel('$x_1$')
     ax2[2,0].set_ylabel('$x_2$')
     ax2[2,0].set_title('Standard NN Exx strain')

@@ -5,7 +5,7 @@ import models
 import argparse
 import numpy as np
 import scipy.io as sio
-
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 
@@ -48,10 +48,36 @@ y2_val = v2 + 0.1 * torch.randn(x1_val.size())
 y_val = torch.cat((y1_val, y2_val), 1)
 
 
-n_pred = 50
+n_pred = 100
 # Get the true function values on a grid
 xv, yv = torch.meshgrid([torch.arange(0.0, n_pred) * 4.0 / n_pred, torch.arange(0.0, n_pred) * 4.0 / n_pred])
 (v1, v2) = vector_field(xv, yv)
+
+xv2, yv2 = torch.meshgrid([torch.arange(0.0, 20) * 4.0 / 20, torch.arange(0.0, 20) * 4.0 / 20])
+(v1_2, v2_2) = vector_field(xv2, yv2)
+
+# generate training data
+n_data = 200
+
+x_train = torch.empty(n_data, 2)
+x_train[0:int(n_data/4), 0] = 1.0 * torch.rand(int(n_data/4))
+x_train[0:int(n_data/4), 1] = 4.0 * torch.rand(int(n_data/4))
+
+x_train[int(n_data/4):2*int(n_data/4), 0] = 3+1.0 * torch.rand(int(n_data/4))
+x_train[int(n_data/4):2*int(n_data/4), 1] = 4.0 * torch.rand(int(n_data/4))
+
+x_train[2*int(n_data/4):3*int(n_data/4), 1] = 1.0 * torch.rand(int(n_data/4))
+x_train[2*int(n_data/4):3*int(n_data/4), 0] = 4.0 * torch.rand(int(n_data/4))
+
+x_train[3*int(n_data/4):4*int(n_data/4), 1] = 3+1.0 * torch.rand(int(n_data/4))
+x_train[3*int(n_data/4):4*int(n_data/4), 0] = 4.0 * torch.rand(int(n_data/4))
+
+x1_train = x_train[:, 0].unsqueeze(1)
+x2_train = x_train[:, 1].unsqueeze(1)
+
+(v1_t, v2_t) = vector_field(x1_train, x2_train)
+y1_train = v1_t + 0.1 * torch.randn(x1_train.size())
+y2_train = v2_t + 0.1 * torch.randn(x1_train.size())
 
 model = models.DerivNet2D(n_in, n_h1, n_h2, n_o)
 model.load_state_dict(torch.load('constrained_2d.pt'))
@@ -121,26 +147,67 @@ with torch.no_grad():
 
 with torch.no_grad():
     # Initialize second plot
-    f2, ax2 = plt.subplots(1, 3, figsize=(13, 4))
-    Q = ax2[0].quiver(xv, yv, v1, v2, scale=None, scale_units='inches')
+    # f2, ax2 = plt.subplots(1, 3, figsize=(14, 4),subplot_kw={'aspect': 1})
+    # Q = ax2[0].quiver(xv2, yv2, v1_2, v2_2, scale=None, scale_units='inches')
+    # ax2[0].plot([1.0, 3.0, 3.0, 1.0, 1.0], [1.0, 1.0, 3.0, 3.0, 1.0], '--')
+    # Q._init()
+    # assert isinstance(Q.scale, float)
+    # ax2[0].quiver(x1_train, x2_train, y1_train, y2_train, scale=Q.scale, scale_units='inches', color='r')
+    # ax2[0].set_xlabel('$x_1$')
+    # ax2[0].set_ylabel('$x_2$')
+    # ax2[0].set_aspect('equal', 'box')
+
+
+    # c1 = ax2[1].pcolor(xv, yv, Cviol, vmin=-Cviol_uc.max(), vmax=Cviol_uc.max())
+    # ax2[1].set_xlabel('$x_1$')
+    # ax2[1].set_ylabel('$x_2$')
+    # f2.colorbar(c1, ax=ax2[1])
+    # ax2[1].set_aspect('equal', 'box')
+    # # ax2[1].set_title('Our Approach RMS error ={0:.2f}'.format(rms_new.item()))
+    #
+    # c2 = ax2[2].pcolor(xv, yv, Cviol_uc, vmin=-Cviol_uc.max(), vmax=Cviol_uc.max())
+    # ax2[2].set_xlabel('$x_1$')
+    # ax2[2].set_ylabel('$x_2$')
+    #
+    # f2.colorbar(c2, ax=ax2[2])
+    # ax2[2].set_aspect('equal', 'box')
+    # # ax2[2].set_title('Unconstrained NN RMS error ={0:.2f}'.format(rms_uc.item()))
+    # plt.show()
+
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(13, 4))
+
+    Q = ax1.quiver(xv2, yv2, v1_2, v2_2, scale=None, scale_units='inches')
+    ax1.plot([1.0, 3.0, 3.0, 1.0, 1.0], [1.0, 1.0, 3.0, 3.0, 1.0], '--')
     Q._init()
     assert isinstance(Q.scale, float)
-    # ax2[0].quiver(x1_train, x2_train, y1_train, y2_train, scale=Q.scale, scale_units='inches', color='r')
-    ax2[0].set_xlabel('$x_1$')
-    ax2[0].set_ylabel('$x_2$')
+    ax1.quiver(x1_train, x2_train, y1_train, y2_train, scale=Q.scale, scale_units='inches', color='r')
+    ax1.set_xlabel('$x_1$')
+    ax1.set_ylabel('$x_2$')
+    ax1.set_aspect('equal', 'box')
 
+    img2 = ax2.pcolor(xv, yv, Cviol, vmin=-Cviol_uc.max(), vmax=Cviol_uc.max())
+    ax2.set_aspect('equal', 'box')
+    divider = make_axes_locatable(ax2)
+    cax2 = divider.append_axes("right", size="5%", pad=0.05)
+    fig.colorbar(img2, cax=cax2)
+    ax2.set_xlabel('$x_1$')
+    ax2.set_ylabel('$x_2$')
+    ax2.set_title('Our Approach')
 
-    ax2[1].pcolor(xv, yv, Cviol, vmin=-6, vmax=6)
-    ax2[1].set_xlabel('$x_1$')
-    ax2[1].set_ylabel('$x_2$')
-    # ax2[1].set_title('Our Approach RMS error ={0:.2f}'.format(rms_new.item()))
+    img3 = ax3.pcolor(xv, yv, Cviol_uc, vmin=-Cviol_uc.max(), vmax=Cviol_uc.max())
+    ax3.set_aspect('equal', 'box')
+    divider = make_axes_locatable(ax3)
+    cax3 = divider.append_axes("right", size="5%", pad=0.05)
+    fig.colorbar(img3, cax=cax3)
+    ax3.set_xlabel('$x_1$')
+    ax3.set_ylabel('$x_2$')
+    ax3.set_title('Unconstrained Neural Network')
 
-
-    ax2[2].pcolor(xv, yv, Cviol_uc, vmin=-6, vmax=6)
-    ax2[2].set_xlabel('$x_1$')
-    ax2[2].set_ylabel('$x_2$')
-    # ax2[2].set_title('Unconstrained NN RMS error ={0:.2f}'.format(rms_uc.item()))
+    plt.tight_layout(h_pad=1)
     plt.show()
+
+    # fig.savefig('constraint_violations.png', format='png')
+
 
 
 
