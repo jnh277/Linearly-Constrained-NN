@@ -51,10 +51,13 @@ class Strain2d(torch.nn.Module):
         return Exx, Eyy, Exy, y
 
 class Strain2d_sc(torch.nn.Module):
-    def __init__(self, base_net, nu=0.28):
+    def __init__(self, base_net, nu=0.28, scale_xx=1.0, scale_yy=1.0, scale_xy=1.0):
         super(Strain2d_sc, self).__init__()
         self.base_net = base_net
         self.nu = nu
+        self.sc_xy = scale_xy
+        self.sc_xx = scale_xx
+        self.sc_yy = scale_yy
 
     def forward(self, x):
         x.requires_grad = True
@@ -65,9 +68,9 @@ class Strain2d_sc(torch.nn.Module):
                        retain_graph=True, only_inputs=True)[0]
         hy = ag.grad(outputs=g[:, 1], inputs=x, create_graph=True, grad_outputs=torch.ones(g[:, 1].size()),
                      retain_graph=True, only_inputs=True)[0]
-        Exx = hy[:, 1].unsqueeze(1) - self.nu * hx[:, 0].unsqueeze(1)
-        Eyy = hx[:, 0].unsqueeze(1) - self.nu * hy[:, 1].unsqueeze(1)
-        Exy = - (1 + self.nu) * hx[:, 1].unsqueeze(1)
+        Exx = (hy[:, 1].unsqueeze(1) - self.nu * hx[:, 0].unsqueeze(1)) * self.sc_xx
+        Eyy = (hx[:, 0].unsqueeze(1) - self.nu * hy[:, 1].unsqueeze(1)) * self.sc_yy
+        Exy = - (1 + self.nu) * hx[:, 1].unsqueeze(1) * self.sc_xy
         return Exx, Eyy, Exy, y
 
 class DivFree(torch.nn.Module):

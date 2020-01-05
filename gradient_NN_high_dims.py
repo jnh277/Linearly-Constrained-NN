@@ -20,7 +20,7 @@ parser.add_argument('--batch_size', type=int, default=350,
                            help='batch size (default: 350).')
 parser.add_argument('--net_hidden_size', type=int, nargs='+', default=[1000,500],
                            help='two hidden layer sizes (default: [1000,500]).',)
-parser.add_argument('--n_data', type=int, default=30000,
+parser.add_argument('--n_data', type=int, default=10000,
                         help='set number of measurements (default:20000)')
 parser.add_argument('--num_workers', type=int, default=2,
                         help='number of workers for data loader (default:2)')
@@ -35,18 +35,14 @@ parser.add_argument('--pin_memory', action='store_true',
                     help='enables pin memory (default:False)')
 parser.add_argument('--scheduler', type=int, default=1,
                     help='0 selects interval reduction, 1 selects plateau (default:1)')
-parser.add_argument('--dims', type=int, default=5,
-                    help='number of dimensions (default: 5)')
+parser.add_argument('--dims', type=int, default=3,
+                    help='number of dimensions (default: 3)')
 parser.add_argument('--sigma', type=int, default=1e-2,
                         help='noise standard deviation (default:1e-2)')
 
 args = parser.parse_args()
 args.display = True
-# args.show_plot = True
-# args.epochs = 30
-# args.batch_size = 350
 sigma = args.sigma
-# args.scheduler = 1
 
 if args.seed >= 0:
     torch.manual_seed(1)
@@ -70,17 +66,7 @@ def vector_field(x, a=25):
         v = (-3.0 * torch.sin(3.0 * x[:, i] + w[0, i]) - 6.0 * x[:, i] * torch.cos(3.0 * x[:, i] + w[0, i]))
         dF[:, i] = t * v
 
-    v = torch.zeros(n, d)
-    for i in range(d):
-        if i < d-1:
-            v[:,i] += dF[:,i+1:].sum(1)
-        if i > 0:
-            v[:,i] += -dF[:,:i].sum(1)
-
-    return F, v
-
-
-
+    return F, dF
 
 
 # set network size
@@ -132,8 +118,20 @@ DL_params = {'batch_size': args.batch_size,
              'pin_memory': pin_memory}
 training_generator = data.DataLoader(training_set, **DL_params)
 
-model = derivnets.DivFree(nn.Sequential(nn.Linear(n_in,n_h1),
-                                                nn.Tanh(),nn.Linear(n_h1,n_h2),
+class DerivNet(torch.nn.Module):
+    def __init__(self, base_net):
+        super(DerivNet, self).__init__()
+        self.base_net = base_net
+
+    def forward(self, x):
+        x.requires_grad = True
+        y = self.base_net(x)
+        dydx = ag.grad(outputs=y, inputs=x, create_graph=True, grad_outputs=torch.ones(y.size()),
+                       retain_graph=True, only_inputs=True)[0]
+        return y, dydx
+
+
+model = DerivNet(nn.Sequential(nn.Linear(n_in,n_h1),nn.Tanh(),nn.Linear(n_h1,n_h2),
                                          nn.Tanh(),nn.Linear(n_h2,n_o)))
 
 model_uc = nn.Sequential(nn.Linear(n_in,n_h1),nn.Tanh(),nn.Linear(n_h1,n_h2),nn.Tanh(),nn.Linear(n_h2,n_o_uc))
@@ -169,7 +167,7 @@ def train(epoch):
 def eval(epoch):
     model.eval()
     (fhat, vhat) = model(x_val)
-    loss = criterion(v_true, vhat)
+    loss = criterion(v_val, vhat)
     return loss
 
 train_loss = np.empty([args.epochs, 1])
