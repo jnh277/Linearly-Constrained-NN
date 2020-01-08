@@ -11,4 +11,4 @@ cd /home/jnh277/Linearly-Constrained-NN
 
 echo "Running with D=$D and I=$I"
 
-python experiment_high_D.py --epochs 600 --save_file dims_study2/exp_${D}_trial_${I} --n_data 50000 --display
+python experiment_high_D.py --epochs 600 --dims ${D} --save_file dims_study2/exp_${D}_trial_${I} --n_data 50000 --display
