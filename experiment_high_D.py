@@ -193,6 +193,10 @@ for epoch in range(args.epochs):
         print(args.save_file, 'Constrained NN: epoch: ', epoch, 'training loss ', train_loss[epoch], 'validation loss', val_loss[epoch])
 
 
+(fhat, vhat) = model(x_val)
+err = vhat - v_true
+mae = err.abs().mean
+rms = err.pow(2).mean().sqrt()
 
 # ---------------  Set up and train the uncconstrained model -------------------------------
 optimizer_uc = torch.optim.Adam(model_uc.parameters(), lr=0.01, weight_decay=1e-3)
@@ -247,6 +251,11 @@ for epoch in range(args.epochs):
         print(args.save_file, 'Standard NN: epoch: ', epoch, 'training loss ', train_loss_uc[epoch], 'validation loss', val_loss_uc[epoch])
 
 
+(vhat) = model_uc(x_val)
+err = vhat - v_true
+mae_uc = err.abs().mean
+rms_uc = err.pow(2).mean().sqrt()
+
 # ----------------- save configuration options and results -------------------------------
 if args.save_file is not '':
     if args.display:
@@ -258,6 +267,10 @@ if args.save_file is not '':
     data['val_loss_uc'] = val_loss_uc
     data['learning_rate'] = learning_rate
     data['learning_rate_uc'] = learning_rate_uc
+    data['rms'] = rms
+    data['mae'] = mae
+    data['rms_uc'] = rms_uc
+    data['mae_uc'] = mae_uc
     sio.savemat('./results/'+ args.save_file+'.mat', data)
 
 
