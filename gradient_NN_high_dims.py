@@ -35,7 +35,7 @@ parser.add_argument('--pin_memory', action='store_true',
                     help='enables pin memory (default:False)')
 parser.add_argument('--scheduler', type=int, default=1,
                     help='0 selects interval reduction, 1 selects plateau (default:1)')
-parser.add_argument('--dims', type=int, default=3,
+parser.add_argument('--dims', type=int, default=5,
                     help='number of dimensions (default: 3)')
 parser.add_argument('--sigma', type=int, default=1e-2,
                         help='noise standard deviation (default:1e-2)')
@@ -43,6 +43,7 @@ parser.add_argument('--sigma', type=int, default=1e-2,
 args = parser.parse_args()
 args.display = True
 sigma = args.sigma
+args.show_plot = True
 
 if args.seed >= 0:
     torch.manual_seed(1)
@@ -52,19 +53,15 @@ pin_memory = args.pin_memory
 dims = args.dims
 
 
-def vector_field(x, a=25):
+def vector_field(x):
     d = x.size(1)
     n = x.size(0)
     w = torch.remainder(torch.linspace(0,d-1,d).unsqueeze(0)*2*3.14/1.61,2*3.14)
-    F = a * torch.exp(-3.0 * x.pow(2).sum(1)) * torch.cos(3.0 * x + w).prod(1)
+    F = torch.cos(3.0 * x + w).sum(1)
     dF = torch.empty(n, d)
 
     for i in range(d):
-        inds = np.arange(d).tolist()
-        inds.pop(i)
-        t = a * torch.exp(-3.0 * x.pow(2).sum(1)) * torch.cos(3.0 * x[:, inds] + w[0, inds].unsqueeze(0)).prod(1)
-        v = (-3.0 * torch.sin(3.0 * x[:, i] + w[0, i]) - 6.0 * x[:, i] * torch.cos(3.0 * x[:, i] + w[0, i]))
-        dF[:, i] = t * v
+        dF[:, i] = -3.0*torch.sin(3.0*x[:, i] +w[0, i])
 
     return F, dF
 
@@ -85,7 +82,7 @@ x_val = torch.rand(10000, dims)
 v_val = v_true + sigma*torch.randn(x_val.size())
 
 # pregenerate training data
-x_train = torch.rand(n_data, dims)
+x_train = -0.05 + 1.1*torch.rand(n_data, dims)
 (f_t, v_t) = vector_field(x_train)
 v_train = v_t + sigma*torch.randn(n_data, dims)
 
@@ -276,20 +273,35 @@ if args.show_plot:
 
     ax2[0].plot(xt[:,0].detach().numpy(),vt[:,0].detach().numpy())
     ax2[0].plot(xt[:, 0].detach().numpy(), vthat[:, 0].detach().numpy())
+    ax2[0].set_title('output dimension 1')
+    ax2[0].legend(['True','learned using cosntrained'])
 
     # ax2[1].plot(xt[:,0].detach().numpy(),vt[:,dims-1].detach().numpy())
     # ax2[1].plot(xt[:, 0].detach().numpy(), vthat[:, dims-1].detach().numpy())
     ax2[1].plot(xt[:,0].detach().numpy(),vt[:,2].detach().numpy())
     ax2[1].plot(xt[:, 0].detach().numpy(), vthat[:, 2].detach().numpy())
+    ax2[1].set_title('output dimension 3')
+    ax2[1].legend(['True','learned using cosntrained'])
 
     ax2[2].plot(xt[:,0].detach().numpy(),ft.detach().numpy())
     ax2[2].plot(xt[:, 0].detach().numpy(), fhat.detach().numpy())
+    ax2[2].set_title('Potential field')
+    ax2[2].legend(['True','learned using cosntrained'])
     plt.show()
 
     f, ax = plt.subplots(1,3,figsize=(12,6))
     ax[0].plot(np.log(train_loss))
     ax[0].plot(np.log(val_loss))
+    ax[0].set_title('Constrained NN')
+    ax[0].legend(['training','validation'])
+    ax[0].set_xlabel('epoch')
+    ax[0].set_ylabel('log mean squared error')
     ax[1].plot(np.log(train_loss_uc))
     ax[1].plot(np.log(val_loss_uc))
+    ax[1].set_title('Standard NN')
+    ax[1].legend(['training','validation'])
+    ax[1].set_xlabel('epoch')
+    ax[1].set_ylabel('log mean squared error')
     ax[2].plot(learning_rate)
+    ax[2].set_title('Learning rate for constrained NN')
     plt.show()
