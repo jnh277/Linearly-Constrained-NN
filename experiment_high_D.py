@@ -267,10 +267,10 @@ if args.save_file is not '':
     data['val_loss_uc'] = val_loss_uc
     data['learning_rate'] = learning_rate
     data['learning_rate_uc'] = learning_rate_uc
-    data['rms'] = rms
-    data['mae'] = mae
-    data['rms_uc'] = rms_uc
-    data['mae_uc'] = mae_uc
+    data['rms'] = rms.numpy()
+    data['mae'] = mae.numpy()
+    data['rms_uc'] = rms_uc.numpy()
+    data['mae_uc'] = mae_uc.numpy()
     sio.savemat('./results/'+ args.save_file+'.mat', data)
 
 
