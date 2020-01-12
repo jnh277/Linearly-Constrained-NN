@@ -23,11 +23,6 @@ val_loss_trials = [r.val_loss];
 val_loss_uc_trials = [r.val_loss_uc];
 % rms_uc = [r.rms_)];
 
-
-ind = logical((dims == 3) + (dims == 4) + (dims == 7));
-dims(ind) = [];
-val_loss_trials(ind) = [];
-val_loss_uc_trials(ind) = [];
 %% get unique n_data numbers
 
 [~, IA, IC] = unique(dims);
@@ -35,18 +30,18 @@ u_dims = dims(:,IA);
 n_trials = diff(IA);
 
 % ind = n_trials ~= 20
-
+ind = (dims == 3
 
 if ~all(n_trials == n_trials(1))        % check if same number of trials have been run for each experiment
     error('Different number of trials for each experiment')
 end
-n_exp = length(u_dims);
+n_exp = length(u_net_size);
 final_val_loss = NaN(n_exp,n_trials(1));
 final_val_loss_uc = NaN(n_exp,n_trials(1));
 
 %%
 
-for i = 1:length(u_dims)
+for i = 1:length(u_net_size)
    I = i==IC;
    final_val_loss(i,:) = val_loss_trials(end,I);
     final_val_loss_uc(i,:) = val_loss_uc_trials(end,I);
@@ -60,21 +55,21 @@ fontsize = 26;
 figure(1)
 set(gcf,'Position',[34         487        1080         438])
 subplot 121
-boxplot(log(final_val_loss.'),u_dims)
+boxplot(log(final_val_loss.'),sum(u_net_size,1))
 set(gca,'FontSize',11.5);
-xlabel('Number of output dimensions','Interpreter','latex','FontSize',fontsize)
-ylabel('log validation loss','Interpreter','latex','FontSize',fontsize)
+xlabel('Number of neurons','Interpreter','latex','FontSize',fontsize)
+ylabel('log rms error','Interpreter','latex','FontSize',fontsize)
 title('Constrained Neural Network','Interpreter','latex','FontSize',fontsize)
-ylim([-6 -0.5])
+ylim([-7.8 -6.55])
 grid on
 
 subplot 122
-boxplot(log(final_val_loss_uc.'),u_dims)
+boxplot(log(final_val_loss_uc.'),sum(u_net_size,1))
 set(gca,'FontSize',11.5);
-xlabel('Number of output dimensions','Interpreter','latex','FontSize',fontsize)
-ylabel('log validation loss','Interpreter','latex','FontSize',fontsize)
+xlabel('Number of neurons','Interpreter','latex','FontSize',fontsize)
+ylabel('log rms error','Interpreter','latex','FontSize',fontsize)
 title('Standard Neural Network','Interpreter','latex','FontSize',fontsize)
-ylim([-6 -0.5])
+ylim([-7.8 -6.55])
 grid on
 p = get(gca,'Position');
 set(gca,'Position',p - [0.05 0 0 0])
