@@ -2,7 +2,7 @@
 clear all
 clc
 
-files = dir('../results/dims_study/*.mat');
+files = dir('../results/dims_study2/*.mat');
 
 for i = 1:length(files)
     r(i) = load(strcat(files(i).folder,'/',files(i).name));
