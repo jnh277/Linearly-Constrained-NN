@@ -3,16 +3,15 @@ clear all
 clc
 
 % files = dir('../results/dims_study2/*.mat'); old
-% files = dir('../results/dims_study/*.mat');
-% files = [files;dir('../results/dims_study/exp_4*.mat');]
-files = dir('../results/dims_study3/*.mat');
+files = dir('../results/dims_study/*.mat');
+% files = dir('../results/dims_study3/*.mat');
 
 for i = 1:length(files)
     r(i) = load(strcat(files(i).folder,'/',files(i).name));
 end
 
 
-dims = [r.dims];
+dims = [r(:).dims];
 
 [~,I] = sort(dims);
 
@@ -21,10 +20,10 @@ r = r(I);
 
 
 
-% val_loss_trials = [r.val_loss]; this is wrong
-% rms = [r.rms];
-% val_loss_uc_trials = [r.val_loss_uc];
-% rms_uc = [r.rms_uc];
+% val_loss_trials = r.val_loss; this is wrong
+rms = r.rms;
+% val_loss_uc_trials = r.val_loss_uc;
+rms_uc = r.rms_uc;
 
 
 % ind = logical((dims == 3) + (dims == 4) + (dims == 7));
@@ -44,23 +43,18 @@ if ~all(n_trials == n_trials(1))        % check if same number of trials have be
     error('Different number of trials for each experiment')
 end
 n_exp = length(u_dims);
-% final_val_loss = NaN(n_exp,n_trials(1));
-% final_val_loss_uc = NaN(n_exp,n_trials(1));
-
-
-rms = NaN(n_trials(1),n_exp);
-rms_uc =NaN(n_trials(1),n_exp);
-
-rms(:) = [r.rms].';
-rms_uc(:) = [r.rms_uc].';
+final_val_loss = NaN(n_exp,n_trials(1));
+final_val_loss_uc = NaN(n_exp,n_trials(1));
+rms = NaN(n_exp,n_trials(1));
+rms_uc =NaN(n_exp,n_trials(1));
 
 %%
 
 for i = 1:length(u_dims)
    I = i==IC;
-%    final_val_loss(i,:) = val_loss_trials(end,I);
-%     final_val_loss_uc(i,:) = val_loss_uc_trials(end,I);
-%     final_val_loss(i,:) = val_loss_trials(I);
+   final_val_loss(i,:) = val_loss_trials(I);
+    final_val_loss_uc(i,:) = val_loss_uc_trials(I);
+    final_val_loss(i,:) = val_loss_trials(I);
 end
 
 %%
@@ -71,21 +65,21 @@ fontsize = 26;
 figure(1)
 set(gcf,'Position',[34         487        1080         438])
 subplot 121
-boxplot(log(rms),u_dims)
+boxplot(log(final_val_loss.'),u_dims)
 set(gca,'FontSize',11.5);
 xlabel('Number of output dimensions','Interpreter','latex','FontSize',fontsize)
-ylabel('log rms error','Interpreter','latex','FontSize',fontsize)
+ylabel('log validation loss','Interpreter','latex','FontSize',fontsize)
 title('Constrained Neural Network','Interpreter','latex','FontSize',fontsize)
-ylim([-4.5 -2.75])
+ylim([-5.5 -0.5])
 grid on
 
 subplot 122
-boxplot(log(rms_uc),u_dims)
+boxplot(log(final_val_loss_uc.'),u_dims)
 set(gca,'FontSize',11.5);
 xlabel('Number of output dimensions','Interpreter','latex','FontSize',fontsize)
-ylabel('log rms error','Interpreter','latex','FontSize',fontsize)
+ylabel('log validation loss','Interpreter','latex','FontSize',fontsize)
 title('Standard Neural Network','Interpreter','latex','FontSize',fontsize)
-ylim([-4.5 -2.75])
+ylim([-5.5 -0.5])
 grid on
 p = get(gca,'Position');
 set(gca,'Position',p - [0.05 0 0 0])
@@ -102,8 +96,8 @@ set(gca,'Position',p - [0.05 0 0 0])
 % plot([r(:).n_data])
 
 %%
-mean(rms.',1)
-std(rms.')
+mean(final_val_loss.',1)
+std(final_val_loss.')
 
-mean(rms_uc.',1)
-std(rms_uc.')
+mean(final_val_loss_uc.',1)
+std(final_val_loss_uc.')
