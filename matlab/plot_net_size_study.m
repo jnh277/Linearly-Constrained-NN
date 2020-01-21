@@ -53,18 +53,18 @@ subplot 121
 boxplot(log(rms_error(inds,:).'),sum(u_net_size(:,inds),1))
 set(gca,'FontSize',11.5);
 xlabel('Number of neurons','Interpreter','latex','FontSize',fontsize)
-ylabel('log rms error','Interpreter','latex','FontSize',fontsize)
+ylabel('log RMSE','Interpreter','latex','FontSize',fontsize)
 title('Constrained Neural Network','Interpreter','latex','FontSize',fontsize)
-ylim([-4.1 0.5])
+ylim([-4.2 0.5])
 grid on
 
 subplot 122
 boxplot(log(rms_error_uc(inds,:).'),sum(u_net_size(:,inds),1))
 set(gca,'FontSize',11.5);
 xlabel('Number of neurons','Interpreter','latex','FontSize',fontsize)
-ylabel('log rms error','Interpreter','latex','FontSize',fontsize)
+ylabel('log RMSE','Interpreter','latex','FontSize',fontsize)
 title('Standard Neural Network','Interpreter','latex','FontSize',fontsize)
-ylim([-4.1 0.5])
+ylim([-4.2 0.5])
 grid on
 p = get(gca,'Position');
 set(gca,'Position',p - [0.05 0 0 0])

@@ -306,7 +306,7 @@ with torch.no_grad():
     ax2[1].pcolor(xv, yv, Cviol, vmin=-Cviol_uc.max(), vmax=Cviol_uc.max())
     ax2[1].set_xlabel('$x_1$')
     ax2[1].set_ylabel('$x_2$')
-    ax2[1].set_title('Our Approach')
+    ax2[1].set_title('Our Constrained Approach')
 
 
     ax2[2].pcolor(xv, yv, Cviol_uc, vmin=-Cviol_uc.max(), vmax=Cviol_uc.max())

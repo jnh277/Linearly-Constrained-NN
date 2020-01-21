@@ -45,7 +45,7 @@ subplot 121
 boxplot(log(rms_error.'),u_n_data)
 set(gca,'FontSize',11.5);
 xlabel('Number of measurements','Interpreter','latex','FontSize',fontsize)
-ylabel('log rms error','Interpreter','latex','FontSize',fontsize)
+ylabel('log RMSE','Interpreter','latex','FontSize',fontsize)
 title('Constrained Neural Network','Interpreter','latex','FontSize',fontsize)
 ylim([-4.1 0.5])
 grid on
@@ -54,7 +54,7 @@ subplot 122
 boxplot(log(rms_error_uc.'),u_n_data)
 set(gca,'FontSize',11.5);
 xlabel('Number of measurements','Interpreter','latex','FontSize',fontsize)
-yh = ylabel('log rms error','Interpreter','latex','FontSize',fontsize);
+yh = ylabel('log RMSE','Interpreter','latex','FontSize',fontsize);
 % set(yh,'Position',get(yh,'Position')+[0.05 0.0 0.0])
 title('Standard Neural Network','Interpreter','latex','FontSize',fontsize)
 ylim([-4.1 0.5])

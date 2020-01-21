@@ -47,21 +47,21 @@ fontsize = 26;
 figure(1)
 set(gcf,'Position',[34         487        1080         438])
 subplot 121
-boxplot(log(final_val_loss.'),u_n_data)
+boxplot(log(sqrt(final_val_loss.')),u_n_data)
 set(gca,'FontSize',11.5);
 xlabel('Number of measurements','Interpreter','latex','FontSize',fontsize)
-ylabel('log mse','Interpreter','latex','FontSize',fontsize)
+ylabel('log RMSE','Interpreter','latex','FontSize',fontsize)
 title('Constrained Neural Network','Interpreter','latex','FontSize',fontsize)
-ylim([-8 -5])
+ylim([-4 -2.2])
 grid on
 
 subplot 122
-boxplot(log(final_val_loss_uc.'),u_n_data)
+boxplot(log(sqrt(final_val_loss_uc.')),u_n_data)
 set(gca,'FontSize',11.5);
 xlabel('Number of measurements','Interpreter','latex','FontSize',fontsize)
-ylabel('log mse','Interpreter','latex','FontSize',fontsize)
+ylabel('log RMSE','Interpreter','latex','FontSize',fontsize)
 title('Standard Neural Network','Interpreter','latex','FontSize',fontsize)
-ylim([-8 -5])
+ylim([-4 -2.2])
 grid on
 p = get(gca,'Position');
 set(gca,'Position',p - [0.05 0 0 0])

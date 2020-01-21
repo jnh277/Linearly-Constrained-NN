@@ -299,7 +299,7 @@ if args.show_plot:
                       scale=Q.scale, scale_units='inches')
         ax2[1].set_xlabel('$x_1$')
         ax2[1].set_ylabel('$x_2$')
-        ax2[1].set_title('Our Approach RMS error ={0:.2f}'.format(rms_new.item()))
+        ax2[1].set_title('Our Constrained Approach RMSE={0:.2f}'.format(rms_new.item()))
 
         error_uc = torch.cat((v1.reshape(400) - v1_pred_uc.detach(), v2.reshape(400) - v2_pred_uc.detach()), 0)
         rms_uc = torch.sqrt(sum(error_uc * error_uc) / 800)
@@ -308,7 +308,7 @@ if args.show_plot:
                       scale=Q.scale, scale_units='inches')
         ax2[2].set_xlabel('$x_1$')
         ax2[2].set_ylabel('$x_2$')
-        ax2[2].set_title('Unconstrained NN RMS error ={0:.2f}'.format(rms_uc.item()))
+        ax2[2].set_title('Unconstrained NN RMSE={0:.2f}'.format(rms_uc.item()))
         plt.show()
         if args.save_plot:
             f2.savefig('div_free_fields.eps', format='eps')
