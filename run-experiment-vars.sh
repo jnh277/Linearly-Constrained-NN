@@ -3,7 +3,6 @@
 #PBS -l walltime=10:00:00           
 #PBS -l software=torch
 #PBS -k oe
-#PBS -q xeon3q
 
 source /etc/profile.d/modules.sh
 module load torch/1.1.0-python3.6
