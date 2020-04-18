@@ -17,3 +17,5 @@ do
         qsub -v ND=${nd},I=${i} run-experiment-vars.sh
     done
 done
+
+#        qsub -v ND=100,I=1 run-experiment-vars.sh
