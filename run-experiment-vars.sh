@@ -6,7 +6,8 @@
 #PBS -q xeon3q
 
 source /etc/profile.d/modules.sh
-module load torch/1.0.1-python3.6  
+module load torch/1.1.0-python3.6
+#module load torch/1.0.1-python3.6
  
 cd /home/jnh277/Linearly-Constrained-NN
 
