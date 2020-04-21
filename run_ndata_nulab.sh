@@ -13,7 +13,7 @@ do
     do
         echo "Running with nd=$nd and i=$i"
         # runs python
-       python3 experiment_2D_reg.py --weight_decay 0.005 --n_data ${nd} --save_file n_data_study_reg005/exp_${nd}_trial_${i} --epochs 400 --scheduler 1
+       python3 experiment_2D_reg.py --weight_decay 0.0005 --n_data ${nd} --save_file n_data_study_reg0005/exp_${nd}_trial_${i} --epochs 400 --scheduler 1
     done
 done
 
