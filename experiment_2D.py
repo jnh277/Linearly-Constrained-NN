@@ -22,7 +22,7 @@ parser.add_argument('--net_hidden_size', type=int, nargs='+', default=[100,50],
                            help='two hidden layer sizes (default: [100,50]).',)
 parser.add_argument('--n_data', type=int, default=3000,
                         help='set number of measurements (default:3000)')
-parser.add_argument('--num_workers', type=int, default=2,
+parser.add_argument('--num_workers', type=int, default=1,
                         help='number of workers for data loader (default:4)')
 parser.add_argument('--show_plot', action='store_true',
                     help='Enable plotting (default:False)')
