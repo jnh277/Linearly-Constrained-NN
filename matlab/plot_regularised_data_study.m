@@ -3,7 +3,8 @@ clear all
 clc
 
 % files = dir('../results/mag_data_n_study/*.mat');
-files = dir('../results/n_data_study_reg001/*.mat');
+% files = dir('../results/n_data_study_reg001/*.mat');
+files = dir('../results/n_data_study_reg00075/*.mat');
 
 for i = 1:length(files)
     r(i) = load(strcat(files(i).folder,'/',files(i).name));
@@ -33,8 +34,8 @@ rms_error_uc_reg = NaN(n_exp,n_trials(1));
 
 %%
 
-% for i = 1:length(u_n_data)
-for i = 1:10
+for i = 1:length(u_n_data)
+% for i = 1:10
    I = i==IC;
    rms_error(i,:) = rms_error_trials(I);
    rms_error_reg(i,:) = rms_error_trials_reg(I);
@@ -54,7 +55,7 @@ plot(u_n_data,log(mean(rms_error_uc,2)))
 plot(u_n_data,log(mean(rms_error_uc_reg,2)))
 hold off
 legend('Constrained','Constrained regularised','Standard','Standard regularised')
-title('with weight decay = 0.005','FontSize',fontsize,'Interpreter','Latex')
+% title('with weight decay = 0.005','FontSize',fontsize,'Interpreter','Latex')
 xlabel('size of training data','FontSize',fontsize,'Interpreter','Latex')
 ylabel('log rmse','FontSize',fontsize,'Interpreter','Latex')
 %%
