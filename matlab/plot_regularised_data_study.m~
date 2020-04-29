@@ -34,7 +34,7 @@ rms_error_uc_reg = NaN(n_exp,n_trials(1));
 %%
 
 % for i = 1:length(u_n_data)
-for i = 1:10
+    for i = 1:10
    I = i==IC;
    rms_error(i,:) = rms_error_trials(I);
    rms_error_reg(i,:) = rms_error_trials_reg(I);
