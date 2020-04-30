@@ -35,7 +35,7 @@ parser.add_argument('--pin_memory', action='store_true',
                     help='enables pin memory (default:False)')
 parser.add_argument('--scheduler', type=int, default=0,
                     help='0 selects interval reduction, 1 selects plateau (default:0)')
-parser.add_argument('--weight_decay', type=float, default=0,
+parser.add_argument('--weight_decay', type=float, default=0.001,
                     help='adds l2-norm regularisation')
 # for this problem using cuda was slower so have removed teh associated code
 # parser.add_argument('--cuda', action='store_true',
@@ -74,8 +74,19 @@ n_o_uc = 2
 model = derivnets.DivFree2D(nn.Sequential(nn.Linear(n_in,n_h1),nn.Tanh(),nn.Linear(n_h1,n_h2),
                                          nn.Tanh(),nn.Linear(n_h2,n_o)))
 
+model_reg = derivnets.DivFree2D(nn.Sequential(nn.Linear(n_in,n_h1),nn.Tanh(),nn.Linear(n_h1,n_h2),
+                                         nn.Tanh(),nn.Linear(n_h2,n_o)))
+
 
 model_uc = torch.nn.Sequential(
+    torch.nn.Linear(n_in, n_h1),
+    torch.nn.Tanh(),
+    torch.nn.Linear(n_h1, n_h2),
+    torch.nn.Tanh(),
+    torch.nn.Linear(n_h2, n_o_uc),
+)
+
+model_uc_reg = torch.nn.Sequential(
     torch.nn.Linear(n_in, n_h1),
     torch.nn.Tanh(),
     torch.nn.Linear(n_h1, n_h2),
@@ -181,7 +192,7 @@ rms_error = torch.sqrt(sum(error_new * error_new) / 800)
 
 # ---------------  Set up and train the constrained model with regularisation -------------------------------
 criterion = torch.nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=args.weight_decay)   # these should also be setable parameters
+optimizer = torch.optim.Adam(model_reg.parameters(), lr=0.01, weight_decay=args.weight_decay)   # these should also be setable parameters
 if args.scheduler == 1:
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10,
                                                      min_lr=1e-10,
@@ -192,13 +203,13 @@ else:
 # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 25, gamma=0.5, last_epoch=-1)
 
 def train(epoch):
-    model.train()
+    model_reg.train()
     total_loss = 0
     n_batches = 0
     for x1_train, x2_train, y1_train, y2_train in training_generator:
         optimizer.zero_grad()
         x_train = torch.cat((x1_train, x2_train), 1)
-        (yhat, v1hat, v2hat) = model(x_train)
+        (yhat, v1hat, v2hat) = model_reg(x_train)
         loss = (criterion(y1_train, v1hat) + criterion(y2_train, v2hat)) / 2  # divide by 2 as it is a mean
         loss.backward()
         optimizer.step()
@@ -207,9 +218,9 @@ def train(epoch):
     return total_loss / n_batches
 
 def eval(epoch):
-    model.eval()
+    model_reg.eval()
     # with torch.no_grad():
-    (yhat, v1hat, v2hat) = model(x_val)
+    (yhat, v1hat, v2hat) = model_reg(x_val)
     loss = (criterion(y1_val, v1hat) + criterion(y2_val, v2hat)) / 2
     return loss.cpu()
 
@@ -234,7 +245,7 @@ for epoch in range(args.epochs):
 
 # work out the rms error for this one
 x_pred = torch.cat((xv.reshape(20 * 20, 1), yv.reshape(20 * 20, 1)), 1)
-(f_pred, v1_pred, v2_pred) = model(x_pred)
+(f_pred, v1_pred, v2_pred) = model_reg(x_pred)
 error_new_reg = torch.cat((v1.reshape(400, 1) - v1_pred.detach(), v2.reshape(400, 1) - v2_pred.detach()), 0)
 rms_error_reg = torch.sqrt(sum(error_new_reg * error_new_reg) / 800)
 
@@ -302,7 +313,7 @@ rms_uc = torch.sqrt(sum(error_uc * error_uc) / 800)
 
 
 # ---------------  Set up and train the uncconstrained model with weight decay -------------------------------
-optimizer_uc = torch.optim.Adam(model_uc.parameters(), lr=0.01, weight_decay=args.weight_decay)
+optimizer_uc = torch.optim.Adam(model_uc_reg.parameters(), lr=0.01, weight_decay=args.weight_decay)
 if args.scheduler == 1:
     scheduler_uc = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_uc, patience=10,
                                                      min_lr=1e-10,
@@ -312,13 +323,13 @@ else:
     scheduler_uc = torch.optim.lr_scheduler.StepLR(optimizer_uc, 100, gamma=0.5, last_epoch=-1)
 
 def train_uc(epoch):
-    model_uc.train()
+    model_uc_reg.train()
     total_loss = 0
     n_batches = 0
     for x1_train, x2_train, y1_train, y2_train in training_generator:
         optimizer_uc.zero_grad()
         x_train = torch.cat((x1_train, x2_train), 1)
-        vhat = model_uc(x_train)
+        vhat = model_uc_reg(x_train)
         y_train = torch.cat((y1_train, y2_train), 1)
         loss = criterion(y_train, vhat)
         loss.backward()
@@ -328,9 +339,9 @@ def train_uc(epoch):
     return total_loss / n_batches
 
 def eval_uc(epoch):
-    model_uc.eval()
+    model_uc_reg.eval()
     with torch.no_grad():
-        (vhat) = model_uc(x_val)
+        (vhat) = model_uc_reg(x_val)
         loss = criterion(y_val, vhat)
     return loss.cpu()
 
@@ -356,7 +367,7 @@ for epoch in range(args.epochs):
 
 # work out final rms error for unconstrainted net
 # work out the rms error for this trial
-(v_pred_uc) = model_uc(x_pred)
+(v_pred_uc) = model_uc_reg(x_pred)
 v1_pred_uc = v_pred_uc[:, 0]
 v2_pred_uc = v_pred_uc[:, 1]
 
