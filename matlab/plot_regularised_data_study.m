@@ -3,8 +3,8 @@ clear all
 clc
 
 % files = dir('../results/mag_data_n_study/*.mat');         % bug
-files = dir('../results/n_data_study_reg01/*.mat');      
-% files = dir('../results/n_data_study_reg001/*.mat');      % bug
+% files = dir('../results/n_data_study_reg01/*.mat');      
+files = dir('../results/n_data_study_reg001/*.mat');      
 % files = dir('../results/n_data_study_reg00075/*.mat');    % bug
 % files = dir('../results/n_data_study_reg0005/*.mat');     % bug
 % files = dir('../results/n_data_study_reg0002/*.mat');     % bug
