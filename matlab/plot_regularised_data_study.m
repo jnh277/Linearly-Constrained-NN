@@ -5,11 +5,12 @@ clc
 % files = dir('../results/mag_data_n_study/*.mat');         % bug
 % files = dir('../results/n_data_study_reg01/*.mat');      
 % files = dir('../results/n_data_study_reg001/*.mat');      
-% files = dir('../results/n_data_study_reg0001/*.mat');    
-files = dir('../results/n_data_study_reg00001/*.mat');    
+% files = dir('../results/n_data_study_reg0001/*.mat');       % -2.929
+% files = dir('../results/n_data_study_reg00001/*.mat');    
 % files = dir('../results/n_data_study_reg00075/*.mat');    % bug
 % files = dir('../results/n_data_study_reg0005/*.mat');     % bug
-% files = dir('../results/n_data_study_reg0002/*.mat');     % bug
+files = dir('../results/n_data_study_reg0002/*.mat');     % 
+% files = dir('../results/n_data_study_reg00008/*.mat');     % -2.899
 
 for i = 1:length(files)
     r(i) = load(strcat(files(i).folder,'/',files(i).name));
@@ -67,29 +68,29 @@ ylabel('log rmse','FontSize',fontsize,'Interpreter','Latex')
 
 
 
-figure(2)
-clf
-set(gcf,'Position',[34         487        1080         438])
-subplot 121
-boxplot(log(rms_error.'),u_n_data)
-set(gca,'FontSize',11.5);
-xlabel('Number of measurements','Interpreter','latex','FontSize',fontsize)
-ylabel('log RMSE','Interpreter','latex','FontSize',fontsize)
-title('Constrained Neural Network','Interpreter','latex','FontSize',fontsize)
-ylim([-4.1 0.5])
-grid on
-
-subplot 122
-boxplot(log(rms_error_uc.'),u_n_data)
-set(gca,'FontSize',11.5);
-xlabel('Number of measurements','Interpreter','latex','FontSize',fontsize)
-yh = ylabel('log RMSE','Interpreter','latex','FontSize',fontsize);
-% set(yh,'Position',get(yh,'Position')+[0.05 0.0 0.0])
-title('Standard Neural Network','Interpreter','latex','FontSize',fontsize)
-ylim([-4.1 0.5])
-grid on
-p = get(gca,'Position');
-set(gca,'Position',p - [0.05 0 0 0])
+% figure(2)
+% clf
+% set(gcf,'Position',[34         487        1080         438])
+% subplot 121
+% boxplot(log(rms_error.'),u_n_data)
+% set(gca,'FontSize',11.5);
+% xlabel('Number of measurements','Interpreter','latex','FontSize',fontsize)
+% ylabel('log RMSE','Interpreter','latex','FontSize',fontsize)
+% title('Constrained Neural Network','Interpreter','latex','FontSize',fontsize)
+% ylim([-4.1 0.5])
+% grid on
+% 
+% subplot 122
+% boxplot(log(rms_error_uc.'),u_n_data)
+% set(gca,'FontSize',11.5);
+% xlabel('Number of measurements','Interpreter','latex','FontSize',fontsize)
+% yh = ylabel('log RMSE','Interpreter','latex','FontSize',fontsize);
+% % set(yh,'Position',get(yh,'Position')+[0.05 0.0 0.0])
+% title('Standard Neural Network','Interpreter','latex','FontSize',fontsize)
+% ylim([-4.1 0.5])
+% grid on
+% p = get(gca,'Position');
+% set(gca,'Position',p - [0.05 0 0 0])
 
 
 % figure(2)
