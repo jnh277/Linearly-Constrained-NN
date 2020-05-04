@@ -15,4 +15,4 @@ echo "Running with ND=$ND and I=$I"
 #python mag_data_experiment.py --scheduler 1 --batch_size 250 --epochs 500 --n_train ${ND} --save_file mag_data_n_study2/exp_${ND}_trial_${I} --net_hidden_size 150 75
 #python experiment_2D.py --n_data ${ND} --save_file n_data_study200/exp_${ND}_trial_${I} --epochs 400 --scheduler 1
 #python experiment_2D.py --n_data ${ND} --save_file hcp/exp_${ND}_trial_${I} --epochs 400 --scheduler 1 --display
-python experiment_2D_reg.py --weight_decay 0.0002 --n_data ${ND} --save_file n_data_study_reg0002/exp_${ND}_trial_${I} --epochs 400 --scheduler 1 --display
+python experiment_2D_reg.py --weight_decay 0.00008 --n_data ${ND} --save_file n_data_study_reg00008/exp_${ND}_trial_${I} --epochs 400 --scheduler 1 --display
