@@ -47,9 +47,9 @@ parser.add_argument('--constraint_weighting',type=float,default=0.0,
 
 
 args = parser.parse_args()
-args.n_data = 3000
-args.display = True
-args.show_plot = True
+# args.n_data = 3000
+# args.display = True
+# args.show_plot = True
 
 if args.seed >= 0:
     torch.manual_seed(args.seed)
