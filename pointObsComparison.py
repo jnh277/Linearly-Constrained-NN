@@ -42,7 +42,7 @@ parser.add_argument('--constraint_weighting',type=float,default=0.0,
 # parser.add_argument('--cuda', action='store_true',
 #                     help='Enable cuda, will use cuda:0 (default:False)')
 
-torch.manual_seed(0)
+# torch.manual_seed(0)
 
 
 
