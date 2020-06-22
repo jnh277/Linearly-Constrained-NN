@@ -23,7 +23,7 @@ n_trials = diff(IA);
 if ~all(n_trials == n_trials(1))        % check if same number of trials have been run for each experiment
     error('Different number of trials for each experiment')
 end
-n_exp = length(u_n_data);
+n_exp = length(u_w);
 rms_error = NaN(n_exp,n_trials(1));
 c_mae = NaN(n_exp,n_trials(1));
 c_mse = NaN(n_exp,n_trials(1));
@@ -33,8 +33,8 @@ c_mse = NaN(n_exp,n_trials(1));
 for i = 1:length(u_w)
     I = i==IC;
     rms_error(i,:) = rms_error_trials(I);
-    c_mae(i,:) = c_mae_trials(I);
-    c_mse(i,:) = c_mse_trials(I);
+%     c_mae(i,:) = c_mae_trials(I);
+%     c_mse(i,:) = c_mse_trials(I);
 end
 
 %%
