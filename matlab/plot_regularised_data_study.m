@@ -2,14 +2,11 @@
 clear all
 clc
 
-% files = dir('../results/mag_data_n_study/*.mat');         % bug
 % files = dir('../results/n_data_study_reg01/*.mat');      
 % files = dir('../results/n_data_study_reg001/*.mat');      
-% files = dir('../results/n_data_study_reg0001/*.mat');       % -2.929
+files = dir('../results/n_data_study_reg0001/*.mat');       % -2.929
 % files = dir('../results/n_data_study_reg00001/*.mat');    
-% files = dir('../results/n_data_study_reg00075/*.mat');    % bug
-% files = dir('../results/n_data_study_reg0005/*.mat');     % bug
-files = dir('../results/n_data_study_reg0002/*.mat');     % 
+% files = dir('../results/n_data_study_reg0002/*.mat');     % -2.865
 % files = dir('../results/n_data_study_reg00008/*.mat');     % -2.899
 
 for i = 1:length(files)
@@ -54,19 +51,22 @@ fontsize = 26;
 
 figure(3)
 clf
-plot(u_n_data,log(mean(rms_error,2)))
+plot(u_n_data,mean(log(rms_error),2),'--','LineWidth',2,'Color',[0, 0.4470, 0.7410])
 hold on
-plot(u_n_data,log(mean(rms_error_reg,2)))
-plot(u_n_data,log(mean(rms_error_uc,2)))
-plot(u_n_data,log(mean(rms_error_uc_reg,2)))
+plot(u_n_data,mean(log(rms_error_reg),2),'LineWidth',2,'Color',[0, 0.4470, 0.7410])
+plot(u_n_data,mean(log(rms_error_uc),2),'--','LineWidth',2,'Color',[0.8500, 0.3250, 0.0980])
+plot(u_n_data,mean(log(rms_error_uc_reg),2),'LineWidth',2,'Color',[0.8500, 0.3250, 0.0980])
 hold off
-legend('Constrained','Constrained regularised','Standard','Standard regularised')
+set(gca,'FontSize',11.5);
+hl = legend('Constrained neural network','Regularised constrained neural network','Standard neural network','Regularised standard neural network');
+set(hl,'FontSize',16,'Interpreter','Latex')
 % title('with weight decay = 0.005','FontSize',fontsize,'Interpreter','Latex')
-xlabel('size of training data','FontSize',fontsize,'Interpreter','Latex')
-ylabel('log rmse','FontSize',fontsize,'Interpreter','Latex')
+xlabel('Number of measurements','FontSize',fontsize,'Interpreter','Latex')
+ylabel('log RMSE','FontSize',fontsize,'Interpreter','Latex')
 %%
 
-
+figure(4)
+boxplot(log(rms_error.'),u_n_data)
 
 % figure(2)
 % clf
