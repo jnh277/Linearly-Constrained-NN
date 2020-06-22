@@ -50,7 +50,6 @@ args = parser.parse_args()
 args.n_data = 3000
 args.display = True
 args.show_plot = True
-args.constraint_weighting = 0.001
 
 if args.seed >= 0:
     torch.manual_seed(args.seed)
