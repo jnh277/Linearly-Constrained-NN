@@ -2,7 +2,7 @@
 clear all
 clc
 
-files = dir('../results/pointObsStudy/*.mat');
+files = dir('../results/pointObsStudy2/*.mat');
 
 for i = 1:length(files)
     r(i) = load(strcat(files(i).folder,'/',files(i).name));
@@ -37,7 +37,13 @@ for i = 1:length(u_w)
     c_mse(i,:) = c_mse_trials(I);
 end
 
+
+%% comparison values
+constrained_rmse = exp(-3.491);     % modal value
+
 %%
+fontsize = 26;
+
 figure(1)
 clf
 subplot 211
@@ -48,13 +54,33 @@ plot(u_w,mean(c_mae,2))
 
 
 
-figure(2)
+figure(3)
 clf
 subplot 121
-boxplot(rms_error.',u_w)
-ylim([0 0.3])
+boxplot(log(rms_error).',u_w);
+ylim([-3.75 -1])
+h = gca;
+xtk = h.XTick;
+hold on
+plot(xtk, xtk*0+log(constrained_rmse),'--','LineWidth',2);
+hold off
+xlabel('Constraint weighting: $\lambda$','Interpreter','Latex','FontSize',fontsize)
+ylabel('log RMSE','FontSize',fontsize,'Interpreter','Latex')
+
+
 subplot 122
 boxplot(c_mae.',u_w)
+ylim([-0.05 0.47])
+h = gca;
+xtk = h.XTick;
+hold on
+plot(xtk, xtk*0,'--','LineWidth',2);
+hold off
+xlabel('Constraint weighting: $\lambda$','Interpreter','Latex','FontSize',fontsize)
+ylabel('mean absolute constraint violation','FontSize',fontsize,'Interpreter','Latex')
+
+
+
 % hold on
 % plot(u_w,c_mae)
 % hold off

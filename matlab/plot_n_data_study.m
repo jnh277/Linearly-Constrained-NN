@@ -36,6 +36,7 @@ for i = 1:length(u_n_data)
     rms_error_uc(i,:) = rms_error_trials_uc(I);
 end
 
+
 %%
 fontsize = 26;
 
@@ -64,14 +65,15 @@ p = get(gca,'Position');
 set(gca,'Position',p - [0.05 0 0 0])
 
 
-% figure(2)
-% plot(u_n_data,log(mean(rms_error,2)))
-% hold on
-% plot(u_n_data,log(mean(rms_error_uc,2)))
-% hold off
-% legend('Constrained NN','Standard NN')
-% xlabel('Number of measurements')
-% ylabel('log rms error')
+figure(2)
+clf
+plot(u_n_data,median(log(rms_error),2))
+hold on
+plot(u_n_data,median(log(rms_error_uc),2))
+hold off
+legend('Constrained NN','Standard NN')
+xlabel('Number of measurements')
+ylabel('log rms error')
 
 % plot([r(:).n_data])
 

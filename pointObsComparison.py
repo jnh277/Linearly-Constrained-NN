@@ -182,7 +182,7 @@ for epoch in range(args.epochs):
     c_val[epoch] = c.detach().numpy()
     if args.scheduler == 1:
         # scheduler.step(v_loss)
-        scheduler.step(v_loss)
+        scheduler.step(loss_c)
     else:
         scheduler.step(epoch)   # input epoch for scheduled lr, val_loss for plateau
     val_loss[epoch] = v_loss.detach().numpy()

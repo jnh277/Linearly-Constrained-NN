@@ -37,19 +37,51 @@ for i = 1:length(u_w)
     c_mse(i,:) = c_mse_trials(I);
 end
 
+
+%% comparison values
+constrained_rmse = exp(-3.491);     % modal value
+
 %%
+fontsize = 26;
+
 figure(1)
 clf
+subplot 211
 plot(u_w,mean(rms_error.^2,2))
-hold on
-plot(u_w,c_mae)
-hold off
+
+subplot 212
+plot(u_w,mean(c_mae,2))
+
 
 
 figure(2)
 clf
-boxplot(rms_error.',u_w)
-ylim([0 0.3])
+subplot 121
+hb = boxplot(log(rms_error).',u_w);
+hold on
+hl = plot(u_w, u_w*0+log(constrained_rmse),'--','LineWidth',2);
+hold off
+xlabel('Constraint weighting: $\lambda$','Interpreter','Latex','FontSize',fontsize)
+ylabel('log RMSE','FontSize',fontsize,'Interpreter','Latex')
+
+% ylim([-4 -1])
+
+% ylim([0 0.3])
+subplot 122
+boxplot(c_mae.',u_w)
+xlabel('Constraint weighting: $\lambda$','Interpreter','Latex','FontSize',fontsize)
+ylabel('mean absolute constraint violation','FontSize',fontsize,'Interpreter','Latex')
+
+%%
+figure(5)
+clf
+boxplot(log(rms_error).',u_w,'positions',u_w);
+ylim([-4 -1])
+h = gca;
+xtk = get(h,'XTick')
+hold on
+plot(xtk,u_w*0+log(constrained_rmse))
+
 % hold on
 % plot(u_w,c_mae)
 % hold off
