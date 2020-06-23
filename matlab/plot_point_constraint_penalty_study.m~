@@ -40,21 +40,16 @@ end
 %%
 figure(1)
 clf
-subplot 211
 plot(u_w,mean(rms_error.^2,2))
-
-subplot 212
-plot(u_w,mean(c_mae,2))
-
+hold on
+plot(u_w,c_mae)
+hold off
 
 
 figure(2)
 clf
-subplot 121
 boxplot(rms_error.',u_w)
 ylim([0 0.3])
-subplot 122
-boxplot(c_mae.',u_w)
 % hold on
 % plot(u_w,c_mae)
 % hold off

@@ -12,4 +12,4 @@ cd /home/jnh277/Linearly-Constrained-NN
 
 echo "Running with w=$W and I=$I"
 
-python pointObsComparison.py  --constraint_weighting ${W} --save_file pointObsStudy/exp_${W}_trial_${I} --epochs 400 --scheduler 1 --display
+python pointObsComparison.py  --constraint_weighting ${W} --save_file pointObsStudy2/exp_${W}_trial_${I} --epochs 400 --scheduler 1 --display
