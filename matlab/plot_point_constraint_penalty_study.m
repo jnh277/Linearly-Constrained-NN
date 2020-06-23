@@ -47,10 +47,10 @@ fontsize = 26;
 figure(1)
 clf
 subplot 211
-plot(u_w,mean(rms_error.^2,2))
+plot(u_w,median(rms_error,2))
 
 subplot 212
-plot(u_w,mean(c_mae,2))
+plot(u_w,median(c_mae,2))
 
 
 
@@ -58,6 +58,7 @@ figure(3)
 clf
 subplot 121
 boxplot(log(rms_error).',u_w);
+% boxplot(rms_error.',u_w);
 ylim([-3.75 -1])
 h = gca;
 xtk = h.XTick;
