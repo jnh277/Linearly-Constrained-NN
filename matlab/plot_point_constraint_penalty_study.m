@@ -2,7 +2,7 @@
 clear all
 clc
 
-files = dir('../results/pointObsStudy2/*.mat');
+files = dir('../results/pointObsStudy/*.mat');
 
 for i = 1:length(files)
     r(i) = load(strcat(files(i).folder,'/',files(i).name));
@@ -42,7 +42,10 @@ end
 constrained_rmse = exp(-3.491);     % modal value
 
 %%
-fontsize = 26;
+fontsize = 40;
+
+% inds = 1:17;
+inds = 1:2:17;
 
 figure(1)
 clf
@@ -52,33 +55,59 @@ plot(u_w,median(rms_error,2))
 subplot 212
 plot(u_w,median(c_mae,2))
 
-
-
-figure(3)
+figure(2)
 clf
-subplot 121
-boxplot(log(rms_error).',u_w);
+boxplot(log(rms_error(inds,:)).',u_w(inds));
 % boxplot(rms_error.',u_w);
-ylim([-3.75 -1])
-h = gca;
-xtk = h.XTick;
+ylim([-3.75 0.5])
+% xtk = h.XTick;
+xtk = get(gca,'XLim');
 hold on
 plot(xtk, xtk*0+log(constrained_rmse),'--','LineWidth',2);
 hold off
+set(gca,'FontSize',20)
 xlabel('Constraint weighting: $\lambda$','Interpreter','Latex','FontSize',fontsize)
 ylabel('log RMSE','FontSize',fontsize,'Interpreter','Latex')
 
 
-subplot 122
-boxplot(c_mae.',u_w)
-ylim([-0.05 0.47])
-h = gca;
-xtk = h.XTick;
+figure(3)
+boxplot(c_mae(inds,:).',u_w(inds))
+ylim([-0.035 0.5])
+% xtk = h.XTick;
+xtk = get(gca,'XLim');
 hold on
 plot(xtk, xtk*0,'--','LineWidth',2);
 hold off
+set(gca,'FontSize',20)
 xlabel('Constraint weighting: $\lambda$','Interpreter','Latex','FontSize',fontsize)
-ylabel('mean absolute constraint violation','FontSize',fontsize,'Interpreter','Latex')
+ylabel('mean $|c|$','FontSize',fontsize,'Interpreter','Latex')
+
+
+% figure(2)
+% clf
+% subplot 121
+% boxplot(log(rms_error).',u_w);
+% % boxplot(rms_error.',u_w);
+% ylim([-3.75 0.5])
+% h = gca;
+% xtk = h.XTick;
+% hold on
+% plot(xtk, xtk*0+log(constrained_rmse),'--','LineWidth',2);
+% hold off
+% xlabel('Constraint weighting: $\lambda$','Interpreter','Latex','FontSize',fontsize)
+% ylabel('log RMSE','FontSize',fontsize,'Interpreter','Latex')
+% 
+% 
+% subplot 122
+% boxplot(c_mae.',u_w)
+% ylim([-0.035 0.5])
+% h = gca;
+% xtk = h.XTick;
+% hold on
+% plot(xtk, xtk*0,'--','LineWidth',2);
+% hold off
+% xlabel('Constraint weighting: $\lambda$','Interpreter','Latex','FontSize',fontsize)
+% ylabel('mean $|c|$','FontSize',fontsize,'Interpreter','Latex')
 
 
 
