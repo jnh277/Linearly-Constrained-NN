@@ -16,7 +16,7 @@
 
 # This code is supplementary material for the submission to ICML 2020,
 # This code will produce the results shown in Figure 1 based off the example given in
-# Section 5.3 "Real Data"
+# Section 5.4 "Real Data"
 
 from torch.utils import data
 import torch

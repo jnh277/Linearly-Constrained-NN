@@ -52,6 +52,8 @@ n_h2 = 50
 n_o = 2         # point observation constraints require 2 output
 
 
+
+# define model taht allows for penalising point evaluation of the constraint
 class pointObsDivFree2D(torch.nn.Module):
     def __init__(self, base_net):
         super(pointObsDivFree2D, self).__init__()
@@ -73,6 +75,25 @@ class pointObsDivFree2D(torch.nn.Module):
 
 model = pointObsDivFree2D(nn.Sequential(nn.Linear(n_in,n_h1),nn.Tanh(),nn.Linear(n_h1,n_h2),
                                          nn.Tanh(),nn.Linear(n_h2,n_o)))
+
+
+
+###      define model for our proposed appraoch
+class DivFree2D(torch.nn.Module):
+    def __init__(self, base_net):
+        super(DivFree2D, self).__init__()
+        self.base_net = base_net
+
+    def forward(self, x):
+        x.requires_grad = True
+        y = self.base_net(x)
+        dydx = ag.grad(outputs=y, inputs=x, create_graph=True, grad_outputs=torch.ones(y.size()),
+                       retain_graph=True, only_inputs=True)[0]
+        return y, dydx[:,1].unsqueeze(1), -dydx[:,0].unsqueeze(1)
+
+
+model_constrained = DivFree2D(nn.Sequential(nn.Linear(n_in,n_h1),nn.Tanh(),nn.Linear(n_h1,n_h2),
+                                         nn.Tanh(),nn.Linear(n_h2,1)))
 
 
 # pregenerate validation data
@@ -186,7 +207,7 @@ for epoch in range(epochs):
 
 
 
-# work out the rms error for this one
+# work out the rms error for this model and the constraint violations
 x_pred = torch.cat((xv.reshape(20 * 20, 1), yv.reshape(20 * 20, 1)), 1)
 (f_pred, c_pred) = model(x_pred)
 error_new = v1.reshape(400,1) - f_pred[:,0].detach()
@@ -196,20 +217,79 @@ c_mse = c_pred.pow(2).mean()
 c_mae = c_pred.abs().mean()
 
 
+# ---------------  Set up and train the constrained model -------------------------------
+criterion = torch.nn.MSELoss()
+optimizer_c = torch.optim.Adam(model_constrained.parameters(), lr=0.01)   # these should also be setable parameters
+scheduler_c = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_c, patience=10,
+                                                     min_lr=1e-10,
+                                                     factor=0.5,
+                                                    cooldown=15)
+
+def train_c(epoch):
+    model_constrained.train()
+    total_loss = 0
+    n_batches = 0
+    for x1_train, x2_train, y1_train, y2_train in training_generator:
+        optimizer_c.zero_grad()
+        x_train = torch.cat((x1_train, x2_train), 1)
+        (yhat, v1hat, v2hat) = model_constrained(x_train)
+        loss = (criterion(y1_train, v1hat) + criterion(y2_train, v2hat)) / 2  # divide by 2 as it is a mean
+        loss.backward()
+        # print(loss.detach().numpy())
+        optimizer_c.step()
+        total_loss += loss
+        n_batches += 1
+    return total_loss / n_batches
+
+def eval_c(epoch):
+    model_constrained.eval()
+    # with torch.no_grad():
+    (yhat, v1hat, v2hat) = model_constrained(x_val)
+    loss = (criterion(y1_val, v1hat) + criterion(y2_val, v2hat)) / 2
+    return loss
+
+
+train_loss_c = np.empty([epochs, 1])
+val_loss_c = np.empty([epochs, 1])
+
+print('Training Constrained NN')
+
+for epoch in range(epochs):
+    train_loss_c[epoch] = train_c(epoch).detach().numpy()
+    v_loss = eval_c(epoch)
+    scheduler_c.step(v_loss)
+    val_loss_c[epoch] = v_loss.detach().numpy()
+    print('Constrained NN: epoch: ', epoch, 'training loss ', train_loss_c[epoch], 'validation loss', val_loss_c[epoch])
+
+c_loss_constrained = 0*val_loss_c
+# work out the rms error and constraint violations
+x_pred = torch.cat((xv.reshape(20 * 20, 1), yv.reshape(20 * 20, 1)), 1)
+(f_pred, v1_pred, v2_pred) = model_constrained(x_pred)
+error_new_c = torch.cat((v1.reshape(400, 1) - v1_pred.detach(), v2.reshape(400, 1) - v2_pred.detach()), 0)
+rms_error_c = torch.sqrt(sum(error_new_c * error_new_c) / 800)
+c_loss_constrained = 0*val_loss_c
+c_mae_constrained = np.mean(0*val_loss_c)    # this model type is guaranteed to satisfy the constraints so no need to calculate
+
 #
 print('')
 print('')
 print('####------------------------ Results ------------------------####')
-print('Point constraint approach: RMSE = ', rms_error.detach().numpy())
+print('Proposed constrained approach: RMSE = ', rms_error_c.detach().numpy()[0])
+print('Proposed constrained approach:  Mean absolute constraint violation = ',c_mae_constrained)
+
+print('Point constraint approach: RMSE = ', rms_error.detach().numpy()[0])
 print('Point constraint approach:  Mean absolute constraint violation = ',c_mae.detach().numpy())
 #
 
 
 plt.plot(c_val)
+plt.plot(c_loss_constrained,'--')
 plt.xlabel('Epoch')
 plt.ylabel('Mean absolute constraint violation')
+plt.legend(('Point constraint approach','Our proposed approach'))
 plt.show()
-plt.plot(val_loss)
+plt.plot(np.log(val_loss))
+plt.plot(np.log(val_loss_c),'--')
 plt.xlabel('Epoch')
-plt.ylabel('Validation loss')
+plt.ylabel('Log validation loss')
 plt.show()
